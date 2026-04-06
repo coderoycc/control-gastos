@@ -1,0 +1,6 @@
+node_modules/
+dist/
+guidelines/
+.vscode/
+*.log
+ATTRIBUTIONS.md
