@@ -1,12 +1,5 @@
 import { useState } from "react";
-import {
-  Plus,
-  Edit2,
-  Trash2,
-  X,
-  Save,
-  DollarSign,
-} from "lucide-react";
+import { Plus, Edit2, Trash2, X, Save, DollarSign, Moon, Sun } from "lucide-react";
 import {
   useData,
   type Account,
@@ -14,6 +7,7 @@ import {
   type SpendingLimit,
 } from "../context/DataContext";
 import { BottomSheet } from "../components/BottomSheet";
+import { useTheme } from "../context/ThemeContext";
 
 const PRESET_COLORS = [
   "#10b981",
@@ -31,6 +25,7 @@ const PRESET_COLORS = [
 ];
 
 export function ConfigurationsManager() {
+  const { theme, toggleTheme } = useTheme();
   const {
     accounts,
     addAccount,
@@ -232,7 +227,20 @@ export function ConfigurationsManager() {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-800">
-        <h2 className="font-medium mb-3">Configuraciones</h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-medium">Configuraciones</h2>
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            aria-label="Toggle theme"
+          >
+            {theme === 'light' ? (
+              <Moon className="w-5 h-5" />
+            ) : (
+              <Sun className="w-5 h-5" />
+            )}
+          </button>
+        </div>
 
         {/* Tabs */}
         <div className="grid grid-cols-3 gap-2">
