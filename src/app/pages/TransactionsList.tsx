@@ -4,6 +4,7 @@ import { ArrowUpCircle, ArrowDownCircle, ArrowRightLeft, Filter, X, ChevronLeft,
 import { useData, type Transaction, type TransactionType } from '../context/DataContext';
 import { format, parseISO, isWithinInterval, startOfMonth, endOfMonth, addMonths, subMonths, getDaysInMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { BottomSheet } from '../components/BottomSheet';
 
 export function TransactionsList() {
   const { transactions, accounts, labels } = useData();
@@ -242,90 +243,80 @@ export function TransactionsList() {
         </Link>
       </div>
 
-      {/* Filters Modal */}
-      {showFilters && (
-        <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-t-2xl w-full max-w-md max-h-[80vh] overflow-auto">
-            <div className="sticky top-0 bg-white dark:bg-gray-900 px-4 py-3 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
-              <h3 className="font-medium">Filtros</h3>
-              <button
-                onClick={() => setShowFilters(false)}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
+      {/* Filters BottomSheet */}
+      <BottomSheet
+        isOpen={showFilters}
+        onClose={() => setShowFilters(false)}
+        title="Filtros"
+      >
+        <div className="p-4 space-y-4">
+          {/* Account Filter */}
+          <div>
+            <label className="block text-sm mb-2 text-gray-700 dark:text-gray-300">
+              Cuenta
+            </label>
+            <select
+              value={selectedAccount}
+              onChange={(e) => setSelectedAccount(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
+            >
+              <option value="all">Todas las cuentas</option>
+              {accounts.map(account => (
+                <option key={account.id} value={account.id}>
+                  {account.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Date Range Filter */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm mb-2 text-gray-700 dark:text-gray-300">
+                Desde
+              </label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
+              />
             </div>
-
-            <div className="p-4 space-y-4">
-              {/* Account Filter */}
-              <div>
-                <label className="block text-sm mb-2 text-gray-700 dark:text-gray-300">
-                  Cuenta
-                </label>
-                <select
-                  value={selectedAccount}
-                  onChange={(e) => setSelectedAccount(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
-                >
-                  <option value="all">Todas las cuentas</option>
-                  {accounts.map(account => (
-                    <option key={account.id} value={account.id}>
-                      {account.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Date Range Filter */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm mb-2 text-gray-700 dark:text-gray-300">
-                    Desde
-                  </label>
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm mb-2 text-gray-700 dark:text-gray-300">
-                    Hasta
-                  </label>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
-                  />
-                </div>
-              </div>
-
-              {(selectedAccount !== 'all' || startDate || endDate) && (
-                <button
-                  onClick={() => {
-                    setSelectedAccount('all');
-                    setStartDate('');
-                    setEndDate('');
-                  }}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                  Limpiar filtros
-                </button>
-              )}
-
-              <button
-                onClick={() => setShowFilters(false)}
-                className="w-full px-4 py-2.5 rounded-lg bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
-              >
-                Aplicar filtros
-              </button>
+            <div>
+              <label className="block text-sm mb-2 text-gray-700 dark:text-gray-300">
+                Hasta
+              </label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
+              />
             </div>
           </div>
+
+          {(selectedAccount !== 'all' || startDate || endDate) && (
+            <button
+              onClick={() => {
+                setSelectedAccount('all');
+                setStartDate('');
+                setEndDate('');
+              }}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors"
+            >
+              <X className="w-4 h-4" />
+              Limpiar filtros
+            </button>
+          )}
+
+          <button
+            onClick={() => setShowFilters(false)}
+            className="w-full px-4 py-2.5 rounded-lg bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
+          >
+            Aplicar filtros
+          </button>
         </div>
-      )}
+      </BottomSheet>
 
       {/* Transactions List with Swipe Gestures */}
       <div 
