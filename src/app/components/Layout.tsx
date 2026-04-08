@@ -1,9 +1,7 @@
 import { Outlet, Link, useLocation } from 'react-router';
 import { Moon, Sun, List, Plus, Settings, BarChart3 } from 'lucide-react';
-import { useTheme } from '../context/ThemeContext';
 
 export function Layout() {
-  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
 
   const isActive = (path: string) => {
@@ -15,22 +13,6 @@ export function Layout() {
 
   return (
     <div className="flex flex-col h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100">
-      {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800">
-        <h1 className="font-semibold">Control de Gastos</h1>
-        <button
-          onClick={toggleTheme}
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          aria-label="Toggle theme"
-        >
-          {theme === 'light' ? (
-            <Moon className="w-5 h-5" />
-          ) : (
-            <Sun className="w-5 h-5" />
-          )}
-        </button>
-      </header>
-
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
         <Outlet />

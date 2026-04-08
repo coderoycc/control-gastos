@@ -119,7 +119,7 @@ export function ReportByAccount() {
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h2 className="font-medium">Reporte por Cuenta</h2>
+            <h2 className="font-medium">Reporte por Cuenta asdf</h2>
           </div>
         </div>
         <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
