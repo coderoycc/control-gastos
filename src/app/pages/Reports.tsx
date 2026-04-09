@@ -1,6 +1,6 @@
 import { useMemo, useState, useRef } from 'react';
 import { Link } from 'react-router';
-import { useData } from '../context/DataContext';
+import { useData } from '../context';
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, addMonths, subMonths, getDaysInMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { TrendingUp, TrendingDown, BarChart3, PieChart, ChevronLeft, ChevronRight } from 'lucide-react';

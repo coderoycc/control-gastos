@@ -1,6 +1,6 @@
 import { useMemo, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { useData } from '../context/DataContext';
+import { useData } from '../context';
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Filter } from 'lucide-react';
@@ -20,11 +20,28 @@ export function ReportByAccount() {
   const [currentAccountIndex, setCurrentAccountIndex] = useState(0);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [showDateFilter, setShowDateFilter] = useState(false);
-  const [allTransactions, setAllTransactions] = useState(false);
+  const [allTransactions, setAllTransactions] = useState(true);
   const [dateRange, setDateRange] = useState({
     start: format(monthStart, 'yyyy-MM-dd'),
     end: format(monthEnd, 'yyyy-MM-dd')
   });
+  const [dateError, setDateError] = useState('');
+
+  const isValidDate = (dateStr: string) => {
+    const regex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!regex.test(dateStr)) return false;
+    const date = new Date(dateStr);
+    return !isNaN(date.getTime());
+  };
+
+  const handleDateChange = (field: 'start' | 'end', value: string) => {
+    if (value && !isValidDate(value)) {
+      setDateError('Fecha inválida');
+    } else {
+      setDateError('');
+    }
+    setDateRange({ ...dateRange, [field]: value });
+  };
 
   // Touch/swipe handling for accounts
   const touchStartX = useRef(0);
@@ -77,6 +94,11 @@ export function ReportByAccount() {
         
         const filterStart = parseISO(dateRange.start);
         const filterEnd = parseISO(dateRange.end);
+        
+        if (isNaN(filterStart.getTime()) || isNaN(filterEnd.getTime())) {
+          return isInAccount;
+        }
+        
         const isInRange = isWithinInterval(date, { start: filterStart, end: filterEnd });
         
         return isInRange && isInAccount;
@@ -101,10 +123,29 @@ export function ReportByAccount() {
     }
     const start = parseISO(dateRange.start);
     const end = parseISO(dateRange.end);
+    
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return 'Rango inválido';
+    }
+    
     return `${format(start, 'd MMM yyyy', { locale: es })} - ${format(end, 'd MMM yyyy', { locale: es })}`;
   };
 
   const applyDateFilter = () => {
+    const start = parseISO(dateRange.start);
+    const end = parseISO(dateRange.end);
+    
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      setDateError('Fecha inválida');
+      return;
+    }
+    
+    if (start > end) {
+      setDateError('La fecha inicio debe ser menor que la fecha fin');
+      return;
+    }
+    
+    setDateError('');
     setShowDateFilter(false);
   };
 
@@ -119,7 +160,7 @@ export function ReportByAccount() {
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h2 className="font-medium">Reporte por Cuenta asdf</h2>
+            <h2 className="font-medium">Reporte por Cuenta</h2>
           </div>
         </div>
         <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
@@ -262,7 +303,10 @@ export function ReportByAccount() {
                 <input
                   type="checkbox"
                   checked={allTransactions}
-                  onChange={(e) => setAllTransactions(e.target.checked)}
+                  onChange={(e) => {
+                    setAllTransactions(e.target.checked);
+                    setDateError('');
+                  }}
                   className="w-4 h-4 rounded border-gray-300 dark:border-gray-600"
                 />
                 <span className="flex-1 text-sm">Todas las transacciones</span>
@@ -278,8 +322,10 @@ export function ReportByAccount() {
                     <input
                       type="date"
                       value={dateRange.start}
-                      onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-950 text-sm"
+                      onChange={(e) => handleDateChange('start', e.target.value)}
+                      className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                        dateError ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'
+                      } bg-white dark:bg-gray-950`}
                     />
                   </div>
                   <div>
@@ -289,8 +335,10 @@ export function ReportByAccount() {
                     <input
                       type="date"
                       value={dateRange.end}
-                      onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-950 text-sm"
+                      onChange={(e) => handleDateChange('end', e.target.value)}
+                      className={`w-full px-3 py-2 rounded-lg border text-sm ${
+                        dateError ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'
+                      } bg-white dark:bg-gray-950`}
                     />
                   </div>
                 </div>
@@ -311,6 +359,13 @@ export function ReportByAccount() {
                   Aplicar
                 </button>
               </div>
+
+              {/* Date Error Message */}
+              {dateError && (
+                <p className="text-xs text-red-600 dark:text-red-400 mt-3 text-center">
+                  {dateError}
+                </p>
+              )}
             </div>
           </div>
         </div>

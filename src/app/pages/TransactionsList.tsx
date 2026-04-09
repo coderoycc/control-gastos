@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef } from 'react';
 import { Link } from 'react-router';
 import { ArrowUpCircle, ArrowDownCircle, ArrowRightLeft, Filter, X, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import { useData, type Transaction, type TransactionType } from '../context/DataContext';
+import { useData, type Transaction, type TransactionType } from '../context';
 import { format, parseISO, isWithinInterval, startOfMonth, endOfMonth, addMonths, subMonths, getDaysInMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { BottomSheet } from '../components/BottomSheet';
@@ -321,9 +321,9 @@ export function TransactionsList() {
       {/* Transactions List with Swipe Gestures */}
       <div 
         className="flex-1 overflow-auto px-4 py-3"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        // onTouchStart={handleTouchStart}
+        // onTouchMove={handleTouchMove}
+        // onTouchEnd={handleTouchEnd}
       >
         {filteredTransactions.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 dark:text-gray-400">
