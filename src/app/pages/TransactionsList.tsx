@@ -1,7 +1,8 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo } from 'react';
+import { useHorizontalSwipe } from '../../hooks';
 import { Link } from 'react-router';
 import { ArrowUpCircle, ArrowDownCircle, ArrowRightLeft, Filter, X, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import { useData, type Transaction, type TransactionType } from '../context';
+import { useData, type TransactionType } from '../context';
 import { format, parseISO, isWithinInterval, startOfMonth, endOfMonth, addMonths, subMonths, getDaysInMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { BottomSheet } from '../components/BottomSheet';
@@ -16,33 +17,6 @@ export function TransactionsList() {
   const [endDate, setEndDate] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
   
-  // Touch/swipe handling
-  const touchStartX = useRef(0);
-  const touchEndX = useRef(0);
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    touchEndX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = () => {
-    const swipeDistance = touchStartX.current - touchEndX.current;
-    const minSwipeDistance = 50;
-
-    if (Math.abs(swipeDistance) > minSwipeDistance) {
-      if (swipeDistance > 0) {
-        // Swipe left - next month
-        handleNextMonth();
-      } else {
-        // Swipe right - previous month
-        handlePreviousMonth();
-      }
-    }
-  };
-
   const handlePreviousMonth = () => {
     // If has date range filter, go back to current month
     if (startDate && endDate) {
@@ -64,6 +38,18 @@ export function TransactionsList() {
       setCurrentDate(prev => addMonths(prev, 1));
     }
   };
+
+  // Swipe detection for month navigation
+  const swipeRef = useHorizontalSwipe(
+    {
+      onSwipeLeft: handleNextMonth,
+      onSwipeRight: handlePreviousMonth,
+    },
+    {
+      threshold: 75,
+      preventScrollOnSwipe: true,
+    }
+  );
 
   const filteredTransactions = useMemo(() => {
     let filtered = [...transactions];
@@ -138,14 +124,6 @@ export function TransactionsList() {
         return 'border-l-blue-600 dark:border-l-blue-400 bg-blue-50 dark:bg-blue-950/20';
     }
   };
-
-  const clearFilters = () => {
-    setSelectedAccount('all');
-    setStartDate('');
-    setEndDate('');
-  };
-
-  const hasActiveFilters = selectedAccount !== 'all' || startDate || endDate;
 
   return (
     <div className="flex flex-col h-full">
@@ -320,10 +298,8 @@ export function TransactionsList() {
 
       {/* Transactions List with Swipe Gestures */}
       <div 
+        ref={swipeRef as React.RefObject<HTMLDivElement>}
         className="flex-1 overflow-auto px-4 py-3"
-        // onTouchStart={handleTouchStart}
-        // onTouchMove={handleTouchMove}
-        // onTouchEnd={handleTouchEnd}
       >
         {filteredTransactions.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 dark:text-gray-400">
