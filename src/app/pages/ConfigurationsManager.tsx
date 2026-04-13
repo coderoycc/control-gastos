@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Plus, Edit2, Trash2, X, Save, DollarSign, Moon, Sun } from "lucide-react";
+import { Plus, Edit2, Trash2, X, Save, DollarSign, Moon, Sun, ArrowUpDown, TrendingUp, TrendingDown } from "lucide-react";
 import {
   useData,
   type Account,
   type Label,
   type SpendingLimit,
-} from "../context/DataContext";
+  type LabelType,
+} from '../context';
 import { BottomSheet } from "../components/BottomSheet";
 import { useTheme } from "../context/ThemeContext";
 
@@ -62,6 +63,7 @@ export function ConfigurationsManager() {
   const [labelColor, setLabelColor] = useState(
     PRESET_COLORS[0],
   );
+  const [labelType, setLabelType] = useState<LabelType>("salida");
 
   // Spending Limit states
   const [showLimitForm, setShowLimitForm] = useState(false);
@@ -90,10 +92,11 @@ export function ConfigurationsManager() {
       updateAccount(editingAccountId, {
         name: accountName,
         detail: accountDetail,
+        balance: accounts.find(a => a.id === editingAccountId)?.balance || 0,
       });
       setEditingAccountId(null);
     } else {
-      addAccount({ name: accountName, detail: accountDetail });
+      addAccount({ name: accountName, detail: accountDetail, balance: 0 });
     }
 
     setAccountName("");
@@ -128,14 +131,16 @@ export function ConfigurationsManager() {
       updateLabel(editingLabelId, {
         name: labelName,
         color: labelColor,
+        type: labelType,
       });
       setEditingLabelId(null);
     } else {
-      addLabel({ name: labelName, color: labelColor });
+      addLabel({ name: labelName, color: labelColor, type: labelType });
     }
 
     setLabelName("");
     setLabelColor(PRESET_COLORS[0]);
+    setLabelType("salida");
     setShowLabelForm(false);
   };
 
@@ -143,6 +148,7 @@ export function ConfigurationsManager() {
     setEditingLabelId(label.id);
     setLabelName(label.name);
     setLabelColor(label.color);
+    setLabelType(label.type);
     setShowLabelForm(true);
   };
 
@@ -151,6 +157,7 @@ export function ConfigurationsManager() {
     setEditingLabelId(null);
     setLabelName("");
     setLabelColor(PRESET_COLORS[0]);
+    setLabelType("salida");
   };
 
   // Spending Limit handlers
@@ -292,53 +299,51 @@ export function ConfigurationsManager() {
           </div>
 
           {/* Accounts List */}
-          <div className="flex-1 overflow-auto px-4 py-3">
+          <div className="flex-1 overflow-auto">
             {accounts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 dark:text-gray-400">
+              <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 dark:text-gray-400 p-4">
                 <p>No hay cuentas registradas</p>
                 <p className="text-sm mt-1">
                   Crea una nueva cuenta
                 </p>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="divide-y divide-gray-200 dark:divide-gray-800">
                 {accounts.map((account) => (
                   <div
                     key={account.id}
-                    className="p-4 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-md transition-shadow"
+                    className="flex items-center justify-between py-2 px-2 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">
-                          {account.name}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {account.name}
+                      </p>
+                      {account.detail && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {account.detail}
                         </p>
-                        {account.detail && (
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            {account.detail}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex gap-2 ml-3">
-                        <button
-                          onClick={() =>
-                            handleEditAccount(account)
-                          }
-                          className="p-2 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() =>
-                            setShowDeleteConfirm({
-                              type: "account",
-                              id: account.id,
-                            })
-                          }
-                          className="p-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                      )}
+                    </div>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() =>
+                          handleEditAccount(account)
+                        }
+                        className="p-1.5 rounded text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() =>
+                          setShowDeleteConfirm({
+                            type: "account",
+                            id: account.id,
+                          })
+                        }
+                        className="p-1.5 rounded text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -372,43 +377,56 @@ export function ConfigurationsManager() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="divide-y divide-gray-200 dark:divide-gray-800 ">
                 {labels.map((label) => (
                   <div
                     key={label.id}
-                    className="p-4 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-md transition-shadow"
+                    className="flex items-center justify-between py-2 px-2 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div
-                          className="w-8 h-8 rounded-lg flex-shrink-0"
-                          style={{
-                            backgroundColor: label.color,
-                          }}
-                        />
-                        <p className="font-medium truncate">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div
+                        className="w-6 h-6 rounded flex-shrink-0 flex items-center justify-center"
+                        style={{
+                          backgroundColor: label.color,
+                        }}
+                      >
+                        {label.type === 'entrada' ? (
+                          <TrendingUp className="w-3 h-3 text-white" />
+                        ) : (
+                          <TrendingDown className="w-3 h-3 text-white" />
+                        )}
+                      </div>
+                      <div className="min-w-0 ">
+                        <p className="text-sm font-medium truncate py-none">
                           {label.name}
                         </p>
+                        <span className={`text-[10px] ${
+                          label.type === 'entrada' 
+                            ? 'text-green-600 dark:text-green-400'
+                            : 'text-red-600 dark:text-red-400'
+                        }` }>
+                          {label.type === 'entrada' ? 'Entrada' : 'Egreso'}
+                        </span>
                       </div>
-                      <div className="flex gap-2 ml-3">
-                        <button
-                          onClick={() => handleEditLabel(label)}
-                          className="p-2 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() =>
-                            setShowDeleteConfirm({
-                              type: "label",
-                              id: label.id,
-                            })
-                          }
-                          className="p-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => handleEditLabel(label)}
+                        className="p-1.5 rounded text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      {/* <button
+                        onClick={() =>
+                          setShowDeleteConfirm({
+                            type: "label",
+                            id: label.id,
+                          })
+                        }
+                        className="p-1.5 rounded text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button> */}
                     </div>
                   </div>
                 ))}
@@ -435,75 +453,72 @@ export function ConfigurationsManager() {
           {/* Limits List */}
           <div className="flex-1 overflow-auto px-4 py-3">
             {spendingLimits.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 dark:text-gray-400">
-                <DollarSign className="w-12 h-12 mb-3 opacity-50" />
+              <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 dark:text-gray-400 p-4">
+                <DollarSign className="w-10 h-10 mb-2 opacity-50" />
                 <p>No hay límites de gasto registrados</p>
                 <p className="text-sm mt-1">
                   Crea un nuevo límite
                 </p>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="divide-y divide-gray-200 dark:divide-gray-800">
                 {spendingLimits.map((limit) => (
                   <div
                     key={limit.id}
-                    className={`p-4 rounded-lg border-2 transition-all ${
+                    className={`flex items-center justify-between py-2 px-2 ${
                       limit.enabled
-                        ? "border-orange-500 dark:border-orange-400 bg-orange-50/50 dark:bg-orange-950/20 shadow-sm"
-                        : "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 opacity-60"
-                    } hover:shadow-md`}
+                        ? "bg-orange-50/50 dark:bg-orange-950/20"
+                        : "opacity-60"
+                    }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div
-                          className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div
+                        className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 ${
+                          limit.enabled
+                            ? "bg-gradient-to-r from-orange-500 to-pink-500"
+                            : "bg-gray-400 dark:bg-gray-600"
+                        }`}
+                      >
+                        <DollarSign className="w-3 h-3 text-white" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {limit.title}
+                        </p>
+                        <p
+                          className={`text-xs ${
                             limit.enabled
-                              ? "bg-gradient-to-br from-orange-500 to-pink-500"
-                              : "bg-gray-400 dark:bg-gray-600"
+                              ? "text-orange-600 dark:text-orange-400"
+                              : "text-gray-500 dark:text-gray-400"
                           }`}
                         >
-                          <DollarSign className="w-5 h-5 text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">
-                            {limit.title}
-                          </p>
-                          <p
-                            className={`text-sm ${
-                              limit.enabled
-                                ? "text-orange-600 dark:text-orange-400"
-                                : "text-gray-600 dark:text-gray-400"
-                            }`}
-                          >
-                            ${limit.amount.toLocaleString()} /
-                            mes
-                          </p>
-                        </div>
-                        {limit.enabled && (
-                          <div className="px-2 py-1 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 text-white text-xs font-medium">
-                            Activo
-                          </div>
-                        )}
+                          ${limit.amount.toLocaleString()}/mes
+                        </p>
                       </div>
-                      <div className="flex gap-2 ml-3">
-                        <button
-                          onClick={() => handleEditLimit(limit)}
-                          className="p-2 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() =>
-                            setShowDeleteConfirm({
-                              type: "limit",
-                              id: limit.id,
-                            })
-                          }
-                          className="p-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                      {limit.enabled && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 text-white">
+                          Activo
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => handleEditLimit(limit)}
+                        className="p-1.5 rounded text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() =>
+                          setShowDeleteConfirm({
+                            type: "limit",
+                            id: limit.id,
+                          })
+                        }
+                        className="p-1.5 rounded text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -650,7 +665,39 @@ export function ConfigurationsManager() {
                   style={{ backgroundColor: color }}
                 />
               ))}
-              \n{" "}
+              {" "}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm mb-2 text-gray-700 dark:text-gray-300">
+              Tipo
+            </label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setLabelType("entrada")}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 transition-all ${
+                  labelType === "entrada"
+                    ? "border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+                    : "border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600"
+                }`}
+              >
+                <TrendingUp className="w-4 h-4" />
+                Ingreso
+              </button>
+              <button
+                type="button"
+                onClick={() => setLabelType("salida")}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 transition-all ${
+                  labelType === "salida"
+                    ? "border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
+                    : "border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600"
+                }`}
+              >
+                <TrendingDown className="w-4 h-4" />
+                Egreso
+              </button>
             </div>
           </div>
 

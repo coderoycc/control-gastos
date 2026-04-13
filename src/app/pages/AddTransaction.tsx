@@ -1,35 +1,53 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { ArrowLeft, Save } from 'lucide-react';
-import { useData, type TransactionType } from '../context/DataContext';
+import { useData, type TransactionType } from '../context';
 
 export function AddTransaction() {
   const navigate = useNavigate();
-  const { addTransaction, accounts, labels } = useData();
+  const { addTransaction, accounts, labels, transferBetweenAccounts } = useData();
   
   const [type, setType] = useState<TransactionType>('salida');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [detail, setDetail] = useState('');
   const [amount, setAmount] = useState('');
   const [accountId, setAccountId] = useState(accounts[0]?.id || '');
+  const [toAccountId, setToAccountId] = useState(accounts[1]?.id || '');
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!detail || !amount || !accountId || selectedLabels.length === 0) {
-      alert('Por favor completa todos los campos y selecciona una etiqueta');
-      return;
+    if (type === 'transferencia') {
+      if (!amount || !accountId || !toAccountId) {
+        alert('Por favor completa los campos de monto y ambas cuentas');
+        return;
+      }
+      const transferAmount = parseFloat(amount);
+      addTransaction({
+        type,
+        date,
+        detail,
+        amount: transferAmount,
+        accountId,
+        toAccountId,
+        labels: []
+      });
+      transferBetweenAccounts(accountId, toAccountId, transferAmount);
+    } else {
+      if (!detail || !amount || !accountId || selectedLabels.length === 0) {
+        alert('Por favor completa todos los campos y selecciona una etiqueta');
+        return;
+      }
+      addTransaction({
+        type,
+        date,
+        detail,
+        amount: parseFloat(amount),
+        accountId,
+        labels: selectedLabels
+      });
     }
-
-    addTransaction({
-      type,
-      date,
-      detail,
-      amount: parseFloat(amount),
-      accountId,
-      labels: selectedLabels
-    });
 
     navigate('/');
   };
@@ -44,8 +62,12 @@ export function AddTransaction() {
     });
   };
 
+  const filteredLabels = labels.filter(label => 
+    type === 'entrada' ? label.type === 'entrada' : label.type === 'salida'
+  );
+
   const getTypeButtonClass = (buttonType: TransactionType) => {
-    const baseClass = 'flex-1 py-2.5 px-4 rounded-lg font-medium transition-colors';
+    const baseClass = 'py-1.5 px-2 text-sm rounded-md font-medium transition-colors';
     if (type === buttonType) {
       switch (buttonType) {
         case 'entrada':
@@ -56,7 +78,7 @@ export function AddTransaction() {
           return `${baseClass} bg-blue-600 text-white dark:bg-blue-500`;
       }
     }
-    return `${baseClass} bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700`;
+    return `${baseClass} flex-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700`;
   };
 
   const getBackgroundColor = () => {
@@ -133,15 +155,15 @@ export function AddTransaction() {
           {/* Detail */}
           <div>
             <label className="block text-xs mb-1.5 text-gray-700 dark:text-gray-300">
-              Detalle
+              Detalle {type === 'transferencia' && '(opcional)'}
             </label>
             <input
               type="text"
               value={detail}
               onChange={(e) => setDetail(e.target.value)}
-              placeholder="Descripción de la transacción"
+              placeholder={type === 'transferencia' ? 'Descripción de la transferencia' : 'Descripción de la transacción'}
               className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
-              required
+              required={type !== 'transferencia'}
             />
           </div>
 
@@ -168,6 +190,7 @@ export function AddTransaction() {
           </div>
 
           {/* Account */}
+          {type !== 'transferencia' && (
           <div>
             <label className="block text-xs mb-1.5 text-gray-700 dark:text-gray-300">
               Cuenta
@@ -185,14 +208,55 @@ export function AddTransaction() {
               ))}
             </select>
           </div>
+          )}
+
+          {type === 'transferencia' && (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs mb-1.5 text-gray-700 dark:text-gray-300">
+                Cuenta Origen
+              </label>
+              <select
+                value={accountId}
+                onChange={(e) => setAccountId(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                required
+              >
+                {accounts.map(account => (
+                  <option key={account.id} value={account.id}>
+                    {account.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs mb-1.5 text-gray-700 dark:text-gray-300">
+                Cuenta Destino
+              </label>
+              <select
+                value={toAccountId}
+                onChange={(e) => setToAccountId(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                required
+              >
+                {accounts.map(account => (
+                  <option key={account.id} value={account.id}>
+                    {account.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          )}
 
           {/* Label */}
+          {type !== 'transferencia' && (
           <div>
             <label className="block text-xs mb-1.5 text-gray-700 dark:text-gray-300">
               Etiqueta
             </label>
             <div className="flex flex-wrap gap-1.5">
-              {labels.map(label => {
+              {filteredLabels.map(label => {
                 const isSelected = selectedLabels.includes(label.id);
                 return (
                   <button
@@ -214,12 +278,13 @@ export function AddTransaction() {
                 );
               })}
             </div>
-            {labels.length === 0 && (
+            {filteredLabels.length === 0 && (
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
-                No hay etiquetas. Crea etiquetas en Configuración.
+                No hay etiquetas de {type === 'entrada' ? 'ingreso' : 'egreso'}. Crea etiquetas en Configuración.
               </p>
             )}
           </div>
+          )}
 
           {/* Submit Button */}
           <button
