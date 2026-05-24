@@ -1,10 +1,10 @@
 /**
  * Custom React hook for horizontal swipe detection
- * 
+ *
  * This hook provides comprehensive horizontal swipe gesture detection for React components.
  * It supports both touch and mouse events, configurable sensitivity settings, and proper
  * gesture lifecycle management.
- * 
+ *
  * @example
  * ```tsx
  * const swipeRef = useHorizontalSwipe({
@@ -13,7 +13,7 @@
  *   threshold: 75,
  *   preventScrollOnSwipe: true
  * });
- * 
+ *
  * return <div ref={swipeRef}>Swipeable content</div>;
  * ```
  */
@@ -37,7 +37,7 @@ import {
 
 /**
  * Hook for detecting horizontal swipe gestures on any HTML element
- * 
+ *
  * @param handlers - Object containing swipe event callback functions
  * @param config - Optional configuration for swipe sensitivity and behavior
  * @returns Ref object to attach to the target HTML element
@@ -74,7 +74,7 @@ export function useHorizontalSwipe(
     // Ignore if gesture is already active
     if (gestureState.current.isActive) return;
 
-    // Ignore multi-touch gestures (Task 6.2: multi-touch handling)
+    // Ignore multi-touch gestures
     if ('touches' in event && event.touches.length > 1) return;
 
     const coords = normalizeEventCoordinates(event);
@@ -92,7 +92,7 @@ export function useHorizontalSwipe(
     // Call onSwipeStart callback
     handlersRef.current.onSwipeStart?.();
 
-    // Prevent default on mouse events to avoid text selection (Task 6.2)
+    // Prevent default on mouse events to avoid text selection
     if ('button' in event && finalConfig.trackMouse) {
       event.preventDefault();
     }
@@ -123,12 +123,10 @@ export function useHorizontalSwipe(
     gestureState.current.currentX = coords.x;
     gestureState.current.currentY = coords.y;
 
-    // Prevent scroll if configured
-    if (finalConfig.preventScrollOnSwipe && Math.abs(deltaX) > Math.abs(deltaY)) {
-      event.preventDefault();
-    }
+    // Prevent scroll
+    event.preventDefault();
 
-    // Debounce onSwiping via requestAnimationFrame (Task 6.1)
+    // Debounce onSwiping via requestAnimationFrame
     if (handlersRef.current.onSwiping) {
       if (rafHandle.current !== null) {
         cancelAnimationFrame(rafHandle.current);
@@ -148,7 +146,7 @@ export function useHorizontalSwipe(
         handlersRef.current.onSwiping?.(swipingEvent);
       });
     }
-  }, [finalConfig.delta, finalConfig.preventScrollOnSwipe]);
+  }, [finalConfig.delta]);
 
   // Handle gesture end (touch/mouse up)
   const handleGestureEnd = useCallback((event: TouchEvent | MouseEvent) => {
@@ -217,10 +215,8 @@ export function useHorizontalSwipe(
     const element = elementRef.current;
     if (!element) return;
 
-    // Task 6.1: touchstart only needs to be non-passive when preventScrollOnSwipe is true,
-    // since we only call preventDefault in touchmove. Using passive: true here improves scroll performance.
-    const touchStartOptions = { passive: !finalConfig.preventScrollOnSwipe };
-    const touchMoveOptions = { passive: !finalConfig.preventScrollOnSwipe };
+    const touchStartOptions = { passive: false };
+    const touchMoveOptions = { passive: false };
     const touchEndOptions = { passive: true };
 
     element.addEventListener('touchstart', handleGestureStart, touchStartOptions);
@@ -233,7 +229,7 @@ export function useHorizontalSwipe(
 
     if (finalConfig.trackMouse) {
       const mouseStartOptions = { passive: false };
-      const mouseMoveOptions = { passive: !finalConfig.preventScrollOnSwipe };
+      const mouseMoveOptions = { passive: false };
       const mouseEndOptions = { passive: true };
 
       element.addEventListener('mousedown', handleGestureStart, mouseStartOptions);
@@ -242,14 +238,14 @@ export function useHorizontalSwipe(
       const handleMouseUp = (e: MouseEvent) => handleGestureEnd(e);
       const handleMouseLeave = () => handleGestureCancel();
 
-      // Task 6.2: Prevent context menu during mouse swipes
+      // Prevent context menu during mouse swipes
       const handleContextMenu = (e: MouseEvent) => {
         if (gestureState.current.isActive) {
           e.preventDefault();
         }
       };
 
-      // Task 6.2: Prevent text selection during mouse swipes
+      // Prevent text selection during mouse swipes
       const handleSelectStart = (e: Event) => {
         if (gestureState.current.isActive) {
           e.preventDefault();
@@ -296,8 +292,7 @@ export function useHorizontalSwipe(
     handleGestureMove,
     handleGestureEnd,
     handleGestureCancel,
-    finalConfig.trackMouse,
-    finalConfig.preventScrollOnSwipe
+    finalConfig.trackMouse
   ]);
 
   return elementRef;
