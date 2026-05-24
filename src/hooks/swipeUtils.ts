@@ -8,16 +8,16 @@ import { SwipeDirection, SwipeConfig } from '../types/swipe';
  * Default configuration values for swipe detection
  */
 export const DEFAULT_SWIPE_CONFIG: Required<SwipeConfig> = {
-  threshold: 50,
-  velocityThreshold: 0.3,
-  delta: 10,
-  preventScrollOnSwipe: false,
-  trackMouse: false
+  threshold: 30,
+  velocityThreshold: 0.15,
+  delta: 15,
+  preventScrollOnSwipe: true,
+  trackMouse: true
 };
 
 /**
  * Calculates the velocity of a gesture in pixels per millisecond
- * 
+ *
  * @param distance - Total distance traveled in pixels
  * @param duration - Time duration in milliseconds
  * @returns Velocity in pixels per millisecond
@@ -29,7 +29,7 @@ export function calculateVelocity(distance: number, duration: number): number {
 
 /**
  * Validates if a gesture meets the minimum requirements for a swipe
- * 
+ *
  * @param distance - Horizontal distance traveled
  * @param velocity - Gesture velocity in pixels/ms
  * @param threshold - Minimum distance threshold
@@ -47,7 +47,7 @@ export function validateGesture(
 
 /**
  * Determines swipe direction based on horizontal movement
- * 
+ *
  * @param deltaX - Change in X coordinate (positive = right, negative = left)
  * @returns SwipeDirection or null if no clear direction
  */
@@ -59,7 +59,7 @@ export function getSwipeDirection(deltaX: number): SwipeDirection | null {
 
 /**
  * Normalizes touch and mouse event coordinates to a consistent format
- * 
+ *
  * @param event - Touch or mouse event
  * @returns Object with x and y coordinates
  */
@@ -78,7 +78,7 @@ export function normalizeEventCoordinates(
 
 /**
  * Checks if vertical movement exceeds the allowed tolerance
- * 
+ *
  * @param deltaY - Change in Y coordinate
  * @param delta - Maximum allowed vertical movement
  * @returns True if vertical movement is within tolerance

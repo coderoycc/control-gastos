@@ -12,7 +12,7 @@ export function Layout() {
   const showFAB = !location.pathname.startsWith('/add') && !location.pathname.startsWith('/edit');
 
   return (
-    <div className="flex flex-col h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100">
+    <div className="flex flex-col h-dvh bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100">
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
         <Outlet />

@@ -57,6 +57,20 @@ export interface SwipeConfig {
 }
 
 /**
+ * Configuration for swipe animations
+ */
+export interface SwipeAnimationConfig {
+  /** Activates or deactivates the animation — default: false */
+  animated?: boolean;
+  /** Type of animation — default: 'slide' */
+  animationType?: 'slide' | 'fade' | 'slide-fade';
+  /** Duration in ms — default: 300 */
+  animationDuration?: number;
+  /** Easing CSS — default: 'ease-out' */
+  animationEasing?: string;
+}
+
+/**
  * Callback function type for swipe start events
  */
 export type SwipeStartCallback = () => void;

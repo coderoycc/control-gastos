@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useHorizontalSwipe } from '../../hooks';
+import { SwipeableContainer } from '../../components';
 import { Link } from 'react-router';
 import { ArrowUpCircle, ArrowDownCircle, ArrowRightLeft, Filter, X, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { useData, type TransactionType } from '../context';
@@ -9,16 +9,14 @@ import { BottomSheet } from '../components/BottomSheet';
 
 export function TransactionsList() {
   const { transactions, accounts, labels } = useData();
-  
-  // Get current month as default
+
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedAccount, setSelectedAccount] = useState<string>('all');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
-  
+
   const handlePreviousMonth = () => {
-    // If has date range filter, go back to current month
     if (startDate && endDate) {
       setStartDate('');
       setEndDate('');
@@ -29,7 +27,6 @@ export function TransactionsList() {
   };
 
   const handleNextMonth = () => {
-    // If has date range filter, go back to current month
     if (startDate && endDate) {
       setStartDate('');
       setEndDate('');
@@ -39,40 +36,25 @@ export function TransactionsList() {
     }
   };
 
-  // Swipe detection for month navigation
-  const swipeRef = useHorizontalSwipe(
-    {
-      onSwipeLeft: handleNextMonth,
-      onSwipeRight: handlePreviousMonth,
-    },
-    {
-      threshold: 75,
-      preventScrollOnSwipe: true,
-    }
-  );
-
   const filteredTransactions = useMemo(() => {
     let filtered = [...transactions];
 
-    // Filter by account
     if (selectedAccount !== 'all') {
       filtered = filtered.filter(t => t.accountId === selectedAccount);
     }
 
-    // Filter by date range (priority over month)
     if (startDate && endDate) {
       filtered = filtered.filter(t => {
         const date = parseISO(t.date);
-        return isWithinInterval(date, { 
-          start: parseISO(startDate), 
-          end: parseISO(endDate) 
+        return isWithinInterval(date, {
+          start: parseISO(startDate),
+          end: parseISO(endDate)
         });
       });
     } else {
-      // Filter by current month
       const monthStart = startOfMonth(currentDate);
       const monthEnd = endOfMonth(currentDate);
-      
+
       filtered = filtered.filter(t => {
         const date = parseISO(t.date);
         return isWithinInterval(date, { start: monthStart, end: monthEnd });
@@ -82,7 +64,6 @@ export function TransactionsList() {
     return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [transactions, selectedAccount, currentDate, startDate, endDate]);
 
-  // Calculate summary
   const summary = useMemo(() => {
     return filteredTransactions.reduce((acc, t) => {
       if (t.type === 'entrada') {
@@ -127,7 +108,6 @@ export function TransactionsList() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Month Header - Compact */}
       <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
         <div className="flex items-center justify-between max-w-md mx-auto">
           <button
@@ -137,7 +117,7 @@ export function TransactionsList() {
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
-          
+
           <div className="flex items-center gap-2 text-center">
             <span className="text-lg font-medium text-gray-500 dark:text-gray-400">
               01
@@ -158,7 +138,7 @@ export function TransactionsList() {
             <ChevronRight className="w-5 h-5" />
           </button>
         </div>
-        
+
         <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-1">
           {format(currentDate, 'yyyy', { locale: es })}
         </p>
@@ -170,7 +150,6 @@ export function TransactionsList() {
         )}
       </div>
 
-      {/* Summary - Compact */}
       <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
         <div className="flex items-center justify-around text-center">
           <div className="flex-1">
@@ -190,8 +169,8 @@ export function TransactionsList() {
           <div className="flex-1">
             <p className="text-xs text-gray-500 dark:text-gray-400">Balance</p>
             <p className={`text-sm font-semibold ${
-              balance >= 0 
-                ? 'text-green-600 dark:text-green-400' 
+              balance >= 0
+                ? 'text-green-600 dark:text-green-400'
                 : 'text-red-600 dark:text-red-400'
             }`}>
               ${balance.toLocaleString()}
@@ -200,9 +179,7 @@ export function TransactionsList() {
         </div>
       </div>
 
-      {/* Floating Buttons Container */}
       <div className="fixed bottom-20 right-4 z-50 flex flex-col gap-1.5">
-        {/* Filter Button */}
         <button
           onClick={() => setShowFilters(true)}
           className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-700 dark:bg-gray-600 text-white shadow-lg hover:bg-gray-800 dark:hover:bg-gray-700 transition-all hover:scale-110 active:scale-95"
@@ -211,7 +188,6 @@ export function TransactionsList() {
           <Filter className="w-4 h-4" />
         </button>
 
-        {/* Add Transaction Button */}
         <Link
           to="/add"
           className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-600 dark:bg-blue-500 text-white shadow-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-all hover:scale-110 active:scale-95"
@@ -221,14 +197,12 @@ export function TransactionsList() {
         </Link>
       </div>
 
-      {/* Filters BottomSheet */}
       <BottomSheet
         isOpen={showFilters}
         onClose={() => setShowFilters(false)}
         title="Filtros"
       >
         <div className="p-4 space-y-4">
-          {/* Account Filter */}
           <div>
             <label className="block text-sm mb-2 text-gray-700 dark:text-gray-300">
               Cuenta
@@ -247,7 +221,6 @@ export function TransactionsList() {
             </select>
           </div>
 
-          {/* Date Range Filter */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm mb-2 text-gray-700 dark:text-gray-300">
@@ -296,9 +269,18 @@ export function TransactionsList() {
         </div>
       </BottomSheet>
 
-      {/* Transactions List with Swipe Gestures */}
-      <div 
-        ref={swipeRef as React.RefObject<HTMLDivElement>}
+      <SwipeableContainer
+        onSwipeLeft={handleNextMonth}
+        onSwipeRight={handlePreviousMonth}
+        threshold={30}
+        velocityThreshold={0.15}
+        delta={15}
+        preventScrollOnSwipe
+        trackMouse
+        animated
+        animationType="slide-fade"
+        animationDuration={350}
+        animationEasing="ease-in-out"
         className="flex-1 overflow-auto px-4 py-3"
       >
         {filteredTransactions.length === 0 ? (
@@ -345,8 +327,8 @@ export function TransactionsList() {
                     </div>
                     <div className="text-right ml-2">
                       <p className={`font-semibold ${
-                        transaction.type === 'entrada' 
-                          ? 'text-green-700 dark:text-green-400' 
+                        transaction.type === 'entrada'
+                          ? 'text-green-700 dark:text-green-400'
                           : transaction.type === 'salida'
                           ? 'text-red-700 dark:text-red-400'
                           : 'text-blue-700 dark:text-blue-400'
@@ -360,7 +342,7 @@ export function TransactionsList() {
             })}
           </div>
         )}
-      </div>
+      </SwipeableContainer>
     </div>
   );
 }
