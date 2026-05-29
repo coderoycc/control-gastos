@@ -274,7 +274,7 @@ export function TransactionsList() {
         onSwipeRight={handlePreviousMonth}
         threshold={30}
         velocityThreshold={0.15}
-        delta={15}
+        delta={30}
         preventScrollOnSwipe
         trackMouse
         animated

@@ -13,3 +13,6 @@
 
 export { SwipeableContainer } from './SwipeableContainer';
 export type { SwipeableContainerProps } from './SwipeableContainer';
+
+export { FinancialSummary } from './FinancialSummary';
+export type { FinancialSummaryProps, FinancialSummaryData } from './FinancialSummary';

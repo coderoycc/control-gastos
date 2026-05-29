@@ -107,7 +107,7 @@ export function useHorizontalSwipe(
     const deltaY = coords.y - gestureState.current.startY;
 
     // Check if vertical movement exceeds tolerance
-    if (!isWithinVerticalTolerance(deltaY, finalConfig.delta)) {
+    if (!isWithinVerticalTolerance(deltaY, finalConfig.delta, deltaX)) {
       // Cancel gesture due to excessive vertical movement
       gestureState.current.isActive = false;
       // Cancel any pending RAF
@@ -170,7 +170,7 @@ export function useHorizontalSwipe(
 
     // Check if gesture meets validation criteria
     if (
-      isWithinVerticalTolerance(deltaY, finalConfig.delta) &&
+      isWithinVerticalTolerance(deltaY, finalConfig.delta, deltaX) &&
       validateGesture(deltaX, velocity, finalConfig.threshold, finalConfig.velocityThreshold)
     ) {
       const direction = getSwipeDirection(deltaX);

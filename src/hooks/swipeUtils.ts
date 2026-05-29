@@ -80,9 +80,13 @@ export function normalizeEventCoordinates(
  * Checks if vertical movement exceeds the allowed tolerance
  *
  * @param deltaY - Change in Y coordinate
- * @param delta - Maximum allowed vertical movement
+ * @param delta - Maximum allowed initial vertical movement
+ * @param deltaX - Change in X coordinate (used to scale tolerance for diagonal swipes)
  * @returns True if vertical movement is within tolerance
  */
-export function isWithinVerticalTolerance(deltaY: number, delta: number): boolean {
-  return Math.abs(deltaY) <= delta;
+export function isWithinVerticalTolerance(deltaY: number, delta: number, deltaX: number = 0): boolean {
+  // Allow the vertical tolerance to scale with horizontal movement (incline support)
+  // while keeping a strict threshold for initial vertical scrolling.
+  // A factor of 0.70 allows an incline angle of up to ~35 degrees, which feels very natural.
+  return Math.abs(deltaY) <= Math.max(delta, Math.abs(deltaX) * 0.7);
 }
