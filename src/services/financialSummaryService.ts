@@ -10,12 +10,13 @@ export interface FinancialSummaryResponse {
 }
 
 const MOCK_DATA: Record<string, Omit<FinancialSummaryResponse, "period">> = {
-	"2026-01": { income: 4200, expenses: 2980, transfers: 300 },
-	"2026-02": { income: 4200, expenses: 3150, transfers: 0 },
-	"2026-03": { income: 3500, expenses: 230, transfers: 500 },
-	"2026-04": { income: 5100, expenses: 4320, transfers: 200 },
-	"2026-05": { income: 4800, expenses: 2650, transfers: 450 },
-	"2026-06": { income: 4800, expenses: 5100, transfers: 100 },
+	// Valores alineados con INITIAL_TRANSACTIONS del contexto
+	"2026-01": { income: 5050,  expenses: 1115, transfers: 300  }, // Salario(4200) + Freelance(850)
+	"2026-02": { income: 4800,  expenses: 1250, transfers: 0    }, // Salario(4200) + Bono(600)
+	"2026-03": { income: 3700,  expenses: 481,  transfers: 500  }, // Salario(3500) + Venta(200)
+	"2026-04": { income: 5850,  expenses: 1648, transfers: 200  }, // Salario(5100) + Freelance(750)
+	"2026-05": { income: 5120,  expenses: 1599, transfers: 450  }, // Salario(4800) + Venta(320)
+	"2026-06": { income: 4800,  expenses: 5100, transfers: 100  }, // Proyección futura
 };
 
 const DEFAULT_MOCK: Omit<FinancialSummaryResponse, "period"> = {

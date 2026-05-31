@@ -7,6 +7,7 @@ import { ConfigurationsManager } from './pages/ConfigurationsManager';
 import { Reports } from './pages/Reports';
 import { ReportByAccount } from './pages/ReportByAccount';
 import { ReportByLabel } from './pages/ReportByLabel';
+import { ReportCharts } from './pages/ReportCharts';
 
 export const router = createBrowserRouter([
   {
@@ -17,6 +18,7 @@ export const router = createBrowserRouter([
       { path: 'reports', Component: Reports },
       { path: 'reports/by-account', Component: ReportByAccount },
       { path: 'reports/by-label', Component: ReportByLabel },
+      { path: 'reports/charts', Component: ReportCharts },
       { path: 'add', Component: AddTransaction },
       { path: 'edit/:id', Component: EditTransaction },
       { path: 'accounts', Component: ConfigurationsManager },
