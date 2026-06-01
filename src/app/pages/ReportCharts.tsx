@@ -1,4 +1,5 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo } from 'react';
+import { useHorizontalSwipe } from '../../hooks/useHorizontalSwipe';
 import { useNavigate, useSearchParams } from 'react-router';
 import { useData } from '../context';
 import {
@@ -74,7 +75,14 @@ export function ReportCharts() {
   // Obtener fecha actual desde URL o del día
   const monthParam = searchParams.get('month');
   const currentDate = useMemo(() => {
-    return monthParam ? new Date(monthParam + '-01') : new Date();
+    const now = new Date();
+    if (monthParam) {
+      const [yearStr, monthStr] = monthParam.split('-');
+      const year = parseInt(yearStr, 10);
+      const month = parseInt(monthStr, 10) - 1; // 0-indexed en JS
+      return new Date(year, month, 1);
+    }
+    return new Date(now.getFullYear(), now.getMonth(), 1);
   }, [monthParam]);
 
   const monthStart = startOfMonth(currentDate);
@@ -91,30 +99,15 @@ export function ReportCharts() {
     setSearchParams({ month: format(nextMonth, 'yyyy-MM') });
   };
 
-  // Touch/swipe para cambiar de mes
-  const touchStartX = useRef(0);
-  const touchEndX = useRef(0);
+  // ── Swipe por zonas ──────────────────────────────────────────
+  // El hook ahora retorna un ref-callback directamente: los listeners
+  // se registran en el momento exacto en que el elemento se monta.
+  const swipeHandlers = { onSwipeLeft: handleNextMonth, onSwipeRight: handlePreviousMonth };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    touchEndX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = () => {
-    const swipeDistance = touchStartX.current - touchEndX.current;
-    const minSwipeDistance = 50;
-
-    if (Math.abs(swipeDistance) > minSwipeDistance) {
-      if (swipeDistance > 0) {
-        handleNextMonth();
-      } else {
-        handlePreviousMonth();
-      }
-    }
-  };
+  const headerRef = useHorizontalSwipe(swipeHandlers, { threshold: 50, delta: 20 });
+  const summaryRef = useHorizontalSwipe(swipeHandlers, { threshold: 50, delta: 20 });
+  // Threshold más alto en el gráfico para no interferir con Recharts
+  const chartRef = useHorizontalSwipe(swipeHandlers, { threshold: 80, delta: 20 });
 
   // 1. Filtrar transacciones por el mes actual
   const monthTransactions = useMemo(() => {
@@ -303,15 +296,14 @@ export function ReportCharts() {
   };
 
   return (
-    <div
-      className="flex flex-col h-full bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
+    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
 
-      {/* SELECTOR DE MESES */}
-      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex items-center justify-between">
+      {/* SELECTOR DE MESES — swipe + flechas */}
+      <div
+        ref={headerRef}
+        className="px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex items-center justify-between"
+        style={{ touchAction: 'pan-y' }}
+      >
         <button
           onClick={handlePreviousMonth}
           className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 transition-colors"
@@ -336,8 +328,12 @@ export function ReportCharts() {
       </div>
 
       <div className="flex-1 overflow-auto p-4 space-y-4">
-        {/* RESUMEN RÁPIDO */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* RESUMEN RÁPIDO — swipeable */}
+        <div
+          ref={summaryRef}
+          className="grid grid-cols-2 gap-3"
+          style={{ touchAction: 'pan-y' }}
+        >
           <div className="p-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex items-center gap-3">
             <div className="p-2 bg-emerald-100 dark:bg-emerald-950/50 rounded-lg">
               <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
@@ -453,8 +449,12 @@ export function ReportCharts() {
           </div>
         )}
 
-        {/* SECTOR GRÁFICO PRINCIPAL */}
-        <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col gap-4">
+        {/* SECTOR GRÁFICO PRINCIPAL — swipeable con threshold alto para no interferir con Recharts */}
+        <div
+          ref={chartRef}
+          className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col gap-4"
+          style={{ touchAction: 'pan-y' }}
+        >
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300">
               {dimension === 'tags' && `Distribución por Etiquetas (${filterType === 'salida' ? 'Gastos' : filterType === 'entrada' ? 'Ingresos' : 'Todos'})`}
