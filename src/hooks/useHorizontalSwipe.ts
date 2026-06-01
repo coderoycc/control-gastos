@@ -1,9 +1,10 @@
 /**
  * Custom React hook for horizontal swipe detection
  *
- * This hook provides comprehensive horizontal swipe gesture detection for React components.
- * It supports both touch and mouse events, configurable sensitivity settings, and proper
- * gesture lifecycle management.
+ * Retorna un **ref-callback** en lugar de un useRef, de modo que los
+ * event listeners se registran exactamente cuando el elemento se monta
+ * en el DOM y se limpian cuando se desmonta. Esto evita el problema de
+ * que useEffect corra antes de que el ref sea asignado.
  *
  * @example
  * ```tsx
@@ -11,14 +12,13 @@
  *   onSwipeLeft: () => console.log('Swiped left'),
  *   onSwipeRight: () => console.log('Swiped right'),
  *   threshold: 75,
- *   preventScrollOnSwipe: true
  * });
  *
  * return <div ref={swipeRef}>Swipeable content</div>;
  * ```
  */
 
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback } from 'react';
 import {
   SwipeConfig,
   SwipeHandlers,
@@ -36,29 +36,27 @@ import {
 } from './swipeUtils';
 
 /**
- * Hook for detecting horizontal swipe gestures on any HTML element
+ * Hook for detecting horizontal swipe gestures on any HTML element.
+ * Returns a ref-callback to attach to the target element.
  *
  * @param handlers - Object containing swipe event callback functions
  * @param config - Optional configuration for swipe sensitivity and behavior
- * @returns Ref object to attach to the target HTML element
+ * @returns A ref-callback to attach to the target HTML element
  */
 export function useHorizontalSwipe(
   handlers: SwipeHandlers = {},
   config: SwipeConfig = {}
 ) {
-  // Merge provided config with defaults
   const finalConfig = { ...DEFAULT_SWIPE_CONFIG, ...config };
 
-  // Ref for the target element
-  const elementRef = useRef<HTMLElement>(null);
-
-  // Store handlers in a ref to avoid stale closures and prevent unnecessary effect re-runs
+  // Store handlers in a ref to avoid stale closures
   const handlersRef = useRef<SwipeHandlers>(handlers);
   handlersRef.current = handlers;
 
   // Gesture state tracking
   const gestureState = useRef({
     isActive: false,
+    direction: null as 'horizontal' | 'vertical' | null,
     startX: 0,
     startY: 0,
     startTime: 0,
@@ -69,233 +67,212 @@ export function useHorizontalSwipe(
   // RAF handle for debouncing onSwiping callbacks
   const rafHandle = useRef<number | null>(null);
 
-  // Handle gesture start (touch/mouse down)
-  const handleGestureStart = useCallback((event: TouchEvent | MouseEvent) => {
-    // Ignore if gesture is already active
-    if (gestureState.current.isActive) return;
+  // Keep a stable ref to config values so the ref-callback doesn't need to depend on them
+  const configRef = useRef(finalConfig);
+  configRef.current = finalConfig;
 
-    // Ignore multi-touch gestures
-    if ('touches' in event && event.touches.length > 1) return;
+  // Keep a stable ref to the cleanup function so we can call it on unmount
+  const cleanupRef = useRef<(() => void) | null>(null);
 
-    const coords = normalizeEventCoordinates(event);
-    const now = Date.now();
-
-    gestureState.current = {
-      isActive: true,
-      startX: coords.x,
-      startY: coords.y,
-      startTime: now,
-      currentX: coords.x,
-      currentY: coords.y
-    };
-
-    // Call onSwipeStart callback
-    handlersRef.current.onSwipeStart?.();
-
-    // Prevent default on mouse events to avoid text selection
-    if ('button' in event && finalConfig.trackMouse) {
-      event.preventDefault();
-    }
-  }, [finalConfig.trackMouse]);
-
-  // Handle gesture move (touch/mouse move)
-  const handleGestureMove = useCallback((event: TouchEvent | MouseEvent) => {
-    if (!gestureState.current.isActive) return;
-
-    const coords = normalizeEventCoordinates(event);
-    const deltaX = coords.x - gestureState.current.startX;
-    const deltaY = coords.y - gestureState.current.startY;
-
-    // Check if vertical movement exceeds tolerance
-    if (!isWithinVerticalTolerance(deltaY, finalConfig.delta, deltaX)) {
-      // Cancel gesture due to excessive vertical movement
-      gestureState.current.isActive = false;
-      // Cancel any pending RAF
-      if (rafHandle.current !== null) {
-        cancelAnimationFrame(rafHandle.current);
-        rafHandle.current = null;
-      }
-      handlersRef.current.onSwipeEnd?.();
-      return;
+  // The ref-callback: called by React with the element when it mounts (non-null)
+  // and with null when it unmounts.
+  const refCallback = useCallback((element: HTMLElement | null) => {
+    // Clean up previous listeners if the element changes or unmounts
+    if (cleanupRef.current) {
+      cleanupRef.current();
+      cleanupRef.current = null;
     }
 
-    // Update current position
-    gestureState.current.currentX = coords.x;
-    gestureState.current.currentY = coords.y;
-
-    // Prevent scroll
-    event.preventDefault();
-
-    // Debounce onSwiping via requestAnimationFrame
-    if (handlersRef.current.onSwiping) {
-      if (rafHandle.current !== null) {
-        cancelAnimationFrame(rafHandle.current);
-      }
-      const capturedCoords = { x: coords.x };
-      const capturedDeltaX = deltaX;
-      const capturedStartTime = gestureState.current.startTime;
-      rafHandle.current = requestAnimationFrame(() => {
-        rafHandle.current = null;
-        if (!gestureState.current.isActive) return;
-        const swipingEvent: SwipingEvent = {
-          currentX: capturedCoords.x,
-          deltaX: capturedDeltaX,
-          direction: getSwipeDirection(capturedDeltaX),
-          startTime: capturedStartTime
-        };
-        handlersRef.current.onSwiping?.(swipingEvent);
-      });
-    }
-  }, [finalConfig.delta]);
-
-  // Handle gesture end (touch/mouse up)
-  const handleGestureEnd = useCallback((event: TouchEvent | MouseEvent) => {
-    if (!gestureState.current.isActive) return;
-
-    // Cancel any pending RAF on gesture end
-    if (rafHandle.current !== null) {
-      cancelAnimationFrame(rafHandle.current);
-      rafHandle.current = null;
-    }
-
-    const coords = normalizeEventCoordinates(event);
-    const deltaX = coords.x - gestureState.current.startX;
-    const deltaY = coords.y - gestureState.current.startY;
-    const duration = Date.now() - gestureState.current.startTime;
-    const distance = Math.abs(deltaX);
-    const velocity = calculateVelocity(distance, duration);
-
-    // Reset gesture state
-    gestureState.current.isActive = false;
-
-    // Check if gesture meets validation criteria
-    if (
-      isWithinVerticalTolerance(deltaY, finalConfig.delta, deltaX) &&
-      validateGesture(deltaX, velocity, finalConfig.threshold, finalConfig.velocityThreshold)
-    ) {
-      const direction = getSwipeDirection(deltaX);
-
-      if (direction) {
-        const swipeEvent: SwipeEvent = {
-          direction,
-          distance,
-          velocity,
-          duration
-        };
-
-        if (direction === SwipeDirection.LEFT) {
-          handlersRef.current.onSwipeLeft?.(swipeEvent);
-        } else if (direction === SwipeDirection.RIGHT) {
-          handlersRef.current.onSwipeRight?.(swipeEvent);
-        }
-      }
-    }
-
-    handlersRef.current.onSwipeEnd?.();
-  }, [
-    finalConfig.threshold,
-    finalConfig.velocityThreshold,
-    finalConfig.delta
-  ]);
-
-  // Handle gesture cancel (touch cancel or mouse leave)
-  const handleGestureCancel = useCallback(() => {
-    if (gestureState.current.isActive) {
-      gestureState.current.isActive = false;
-      if (rafHandle.current !== null) {
-        cancelAnimationFrame(rafHandle.current);
-        rafHandle.current = null;
-      }
-      handlersRef.current.onSwipeEnd?.();
-    }
-  }, []);
-
-  // Set up event listeners when element is attached
-  useEffect(() => {
-    const element = elementRef.current;
     if (!element) return;
 
-    const touchStartOptions = { passive: false };
-    const touchMoveOptions = { passive: false };
-    const touchEndOptions = { passive: true };
+    const cfg = configRef.current;
 
-    element.addEventListener('touchstart', handleGestureStart, touchStartOptions);
-    element.addEventListener('touchmove', handleGestureMove, touchMoveOptions);
-    element.addEventListener('touchend', handleGestureEnd, touchEndOptions);
-    element.addEventListener('touchcancel', handleGestureCancel, touchEndOptions);
+    // ── Gesture handlers ──────────────────────────────────────────
 
-    // Mouse event listeners (if enabled)
-    let mouseEventListeners: (() => void)[] = [];
+    const handleGestureStart = (event: TouchEvent | MouseEvent) => {
+      if (gestureState.current.isActive) return;
+      if ('touches' in event && event.touches.length > 1) return;
 
-    if (finalConfig.trackMouse) {
-      const mouseStartOptions = { passive: false };
-      const mouseMoveOptions = { passive: false };
-      const mouseEndOptions = { passive: true };
-
-      element.addEventListener('mousedown', handleGestureStart, mouseStartOptions);
-
-      const handleMouseMove = (e: MouseEvent) => handleGestureMove(e);
-      const handleMouseUp = (e: MouseEvent) => handleGestureEnd(e);
-      const handleMouseLeave = () => handleGestureCancel();
-
-      // Prevent context menu during mouse swipes
-      const handleContextMenu = (e: MouseEvent) => {
-        if (gestureState.current.isActive) {
-          e.preventDefault();
-        }
+      const coords = normalizeEventCoordinates(event);
+      gestureState.current = {
+        isActive: true,
+        direction: null,
+        startX: coords.x,
+        startY: coords.y,
+        startTime: Date.now(),
+        currentX: coords.x,
+        currentY: coords.y
       };
 
-      // Prevent text selection during mouse swipes
-      const handleSelectStart = (e: Event) => {
-        if (gestureState.current.isActive) {
-          e.preventDefault();
+      handlersRef.current.onSwipeStart?.();
+
+      if ('button' in event && cfg.trackMouse) {
+        event.preventDefault();
+      }
+    };
+
+    const handleGestureMove = (event: TouchEvent | MouseEvent) => {
+      if (!gestureState.current.isActive) return;
+
+      const coords = normalizeEventCoordinates(event);
+      const deltaX = coords.x - gestureState.current.startX;
+      const deltaY = coords.y - gestureState.current.startY;
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
+
+      // Si aún no hemos decidido la dirección del gesto, esperamos a un movimiento mínimo (umbral de intención)
+      if (gestureState.current.direction === null) {
+        const intentThreshold = 8; // píxeles mínimos en cualquier eje para decidir
+        if (absX < intentThreshold && absY < intentThreshold) {
+          return; // Esperar más movimiento
         }
-      };
 
-      document.addEventListener('mousemove', handleMouseMove, mouseMoveOptions);
-      document.addEventListener('mouseup', handleMouseUp, mouseEndOptions);
-      element.addEventListener('mouseleave', handleMouseLeave, mouseEndOptions);
-      element.addEventListener('contextmenu', handleContextMenu);
-      element.addEventListener('selectstart', handleSelectStart);
+        // Decidir la dirección dominante del gesto
+        if (absX > absY) {
+          gestureState.current.direction = 'horizontal';
+        } else {
+          // Es desplazamiento predominantemente vertical (scroll nativo), cancelamos el swipe
+          gestureState.current.direction = 'vertical';
+          gestureState.current.isActive = false;
+          handlersRef.current.onSwipeEnd?.();
+          return;
+        }
+      }
 
-      mouseEventListeners = [
-        () => document.removeEventListener('mousemove', handleMouseMove),
-        () => document.removeEventListener('mouseup', handleMouseUp),
-        () => element.removeEventListener('mouseleave', handleMouseLeave),
-        () => element.removeEventListener('contextmenu', handleContextMenu),
-        () => element.removeEventListener('selectstart', handleSelectStart)
-      ];
+      // Si ya se determinó como vertical, ignorar eventos subsiguientes del gesto actual
+      if (gestureState.current.direction === 'vertical') {
+        return;
+      }
+
+      // De lo contrario, es un gesto horizontal
+      gestureState.current.currentX = coords.x;
+      gestureState.current.currentY = coords.y;
+
+      // Prevenir el scroll vertical nativo y la navegación horizontal del historial nativo
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+
+      if (handlersRef.current.onSwiping) {
+        if (rafHandle.current !== null) cancelAnimationFrame(rafHandle.current);
+        const capturedCoords = { x: coords.x };
+        const capturedDeltaX = deltaX;
+        const capturedStartTime = gestureState.current.startTime;
+        rafHandle.current = requestAnimationFrame(() => {
+          rafHandle.current = null;
+          if (!gestureState.current.isActive) return;
+          const swipingEvent: SwipingEvent = {
+            currentX: capturedCoords.x,
+            deltaX: capturedDeltaX,
+            direction: getSwipeDirection(capturedDeltaX),
+            startTime: capturedStartTime
+          };
+          handlersRef.current.onSwiping?.(swipingEvent);
+        });
+      }
+    };
+
+    const handleGestureEnd = (event: TouchEvent | MouseEvent) => {
+      if (!gestureState.current.isActive) return;
+
+      if (rafHandle.current !== null) {
+        cancelAnimationFrame(rafHandle.current);
+        rafHandle.current = null;
+      }
+
+      const coords = normalizeEventCoordinates(event);
+      const deltaX = coords.x - gestureState.current.startX;
+      const duration = Date.now() - gestureState.current.startTime;
+      const distance = Math.abs(deltaX);
+      const velocity = calculateVelocity(distance, duration);
+
+      const wasHorizontal = gestureState.current.direction === 'horizontal';
+
+      gestureState.current.isActive = false;
+      gestureState.current.direction = null;
+
+      if (
+        wasHorizontal &&
+        validateGesture(deltaX, velocity, cfg.threshold, cfg.velocityThreshold)
+      ) {
+        const direction = getSwipeDirection(deltaX);
+        if (direction) {
+          const swipeEvent: SwipeEvent = { direction, distance, velocity, duration };
+          if (direction === SwipeDirection.LEFT) {
+            handlersRef.current.onSwipeLeft?.(swipeEvent);
+          } else if (direction === SwipeDirection.RIGHT) {
+            handlersRef.current.onSwipeRight?.(swipeEvent);
+          }
+        }
+      }
+
+      handlersRef.current.onSwipeEnd?.();
+    };
+
+    const handleGestureCancel = () => {
+      if (gestureState.current.isActive) {
+        gestureState.current.isActive = false;
+        gestureState.current.direction = null;
+        if (rafHandle.current !== null) {
+          cancelAnimationFrame(rafHandle.current);
+          rafHandle.current = null;
+        }
+        handlersRef.current.onSwipeEnd?.();
+      }
+    };
+
+    // ── Register listeners ────────────────────────────────────────
+
+    element.addEventListener('touchstart', handleGestureStart, { passive: false });
+    element.addEventListener('touchmove', handleGestureMove, { passive: false });
+    element.addEventListener('touchend', handleGestureEnd, { passive: true });
+    element.addEventListener('touchcancel', handleGestureCancel, { passive: true });
+
+    const mouseCleanups: Array<() => void> = [];
+
+    if (cfg.trackMouse) {
+      element.addEventListener('mousedown', handleGestureStart, { passive: false });
+
+      const onMouseMove = (e: MouseEvent) => handleGestureMove(e);
+      const onMouseUp = (e: MouseEvent) => handleGestureEnd(e);
+      const onMouseLeave = () => handleGestureCancel();
+      const onContextMenu = (e: MouseEvent) => { if (gestureState.current.isActive) e.preventDefault(); };
+      const onSelectStart = (e: Event) => { if (gestureState.current.isActive) e.preventDefault(); };
+
+      document.addEventListener('mousemove', onMouseMove, { passive: false });
+      document.addEventListener('mouseup', onMouseUp, { passive: true });
+      element.addEventListener('mouseleave', onMouseLeave, { passive: true });
+      element.addEventListener('contextmenu', onContextMenu);
+      element.addEventListener('selectstart', onSelectStart);
+
+      mouseCleanups.push(
+        () => document.removeEventListener('mousemove', onMouseMove),
+        () => document.removeEventListener('mouseup', onMouseUp),
+        () => element.removeEventListener('mouseleave', onMouseLeave),
+        () => element.removeEventListener('contextmenu', onContextMenu),
+        () => element.removeEventListener('selectstart', onSelectStart),
+        () => element.removeEventListener('mousedown', handleGestureStart)
+      );
     }
 
-    // Cleanup function
-    return () => {
+    // ── Cleanup stored for when element unmounts ──────────────────
+    cleanupRef.current = () => {
       element.removeEventListener('touchstart', handleGestureStart);
       element.removeEventListener('touchmove', handleGestureMove);
       element.removeEventListener('touchend', handleGestureEnd);
       element.removeEventListener('touchcancel', handleGestureCancel);
-
-      if (finalConfig.trackMouse) {
-        element.removeEventListener('mousedown', handleGestureStart);
-        mouseEventListeners.forEach(cleanup => cleanup());
-      }
-
-      // Cancel any pending RAF on cleanup
+      mouseCleanups.forEach(fn => fn());
       if (rafHandle.current !== null) {
         cancelAnimationFrame(rafHandle.current);
         rafHandle.current = null;
       }
-
       gestureState.current.isActive = false;
+      gestureState.current.direction = null;
     };
-  }, [
-    handleGestureStart,
-    handleGestureMove,
-    handleGestureEnd,
-    handleGestureCancel,
-    finalConfig.trackMouse
-  ]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  return elementRef;
+  return refCallback;
 }
 
 export default useHorizontalSwipe;
