@@ -10,7 +10,10 @@ import { BottomSheet } from '../components/BottomSheet';
 export function TransactionsList() {
   const { transactions, accounts, labels } = useData();
 
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
   const [selectedAccount, setSelectedAccount] = useState<string>('all');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
@@ -20,7 +23,8 @@ export function TransactionsList() {
     if (startDate && endDate) {
       setStartDate('');
       setEndDate('');
-      setCurrentDate(new Date());
+      const now = new Date();
+      setCurrentDate(new Date(now.getFullYear(), now.getMonth(), 1));
     } else {
       setCurrentDate(prev => subMonths(prev, 1));
     }
@@ -30,7 +34,8 @@ export function TransactionsList() {
     if (startDate && endDate) {
       setStartDate('');
       setEndDate('');
-      setCurrentDate(new Date());
+      const now = new Date();
+      setCurrentDate(new Date(now.getFullYear(), now.getMonth(), 1));
     } else {
       setCurrentDate(prev => addMonths(prev, 1));
     }

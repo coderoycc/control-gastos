@@ -195,14 +195,12 @@ export const SwipeableContainer = forwardRef<HTMLElement, SwipeableContainerProp
     // Combine refs if forwardedRef is provided
     const combinedRef = React.useCallback(
       (element: HTMLElement | null) => {
-        if (swipeRef.current !== element) {
-          (swipeRef as React.MutableRefObject<HTMLElement | null>).current = element;
-        }
+        swipeRef(element);
         if (forwardedRef) {
           if (typeof forwardedRef === 'function') {
             forwardedRef(element);
           } else {
-            forwardedRef.current = element;
+            (forwardedRef as React.MutableRefObject<HTMLElement | null>).current = element;
           }
         }
       },
