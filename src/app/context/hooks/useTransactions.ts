@@ -1,5 +1,8 @@
+// src/app/context/hooks/useTransactions.ts
+
 import { useCallback } from 'react';
 import { Transaction } from '../types';
+import { transactionRepo } from '../../../services/db';
 
 export function useTransactions(
   transactions: Transaction[],
@@ -7,20 +10,23 @@ export function useTransactions(
 ) {
   const addTransaction = useCallback(
     (transaction: Omit<Transaction, 'id'>) => {
-      const newTransaction = {
+      const newTransaction: Transaction = {
         ...transaction,
         id: Date.now().toString()
       };
       setTransactions(prev => [newTransaction, ...prev]);
+      transactionRepo.put(newTransaction).catch(console.error);
     },
     [setTransactions]
   );
 
   const updateTransaction = useCallback(
     (id: string, transaction: Omit<Transaction, 'id'>) => {
+      const updated: Transaction = { ...transaction, id };
       setTransactions(prev =>
-        prev.map(t => t.id === id ? { ...transaction, id } : t)
+        prev.map(t => t.id === id ? updated : t)
       );
+      transactionRepo.put(updated).catch(console.error);
     },
     [setTransactions]
   );
@@ -28,6 +34,7 @@ export function useTransactions(
   const deleteTransaction = useCallback(
     (id: string) => {
       setTransactions(prev => prev.filter(t => t.id !== id));
+      transactionRepo.remove(id).catch(console.error);
     },
     [setTransactions]
   );

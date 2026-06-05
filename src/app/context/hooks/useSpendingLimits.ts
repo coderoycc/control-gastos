@@ -2,6 +2,7 @@
 
 import { useCallback } from 'react';
 import { SpendingLimit } from '../types';
+import { spendingLimitRepo } from '../../../services/db';
 
 export function useSpendingLimits(
   spendingLimits: SpendingLimit[],
@@ -9,14 +10,20 @@ export function useSpendingLimits(
 ) {
   const addSpendingLimit = useCallback(
     (limit: Omit<SpendingLimit, 'id'>) => {
-      const newLimit = {
+      const newLimit: SpendingLimit = {
         ...limit,
         id: Date.now().toString()
       };
       if (newLimit.enabled) {
-        setSpendingLimits(prev => [...prev.map(l => ({ ...l, enabled: false })), newLimit]);
+        setSpendingLimits(prev => {
+          const updated = [...prev.map(l => ({ ...l, enabled: false })), newLimit];
+          // Persistir todos los que cambiaron
+          updated.forEach(l => spendingLimitRepo.put(l).catch(console.error));
+          return updated;
+        });
       } else {
         setSpendingLimits(prev => [...prev, newLimit]);
+        spendingLimitRepo.put(newLimit).catch(console.error);
       }
     },
     [setSpendingLimits]
@@ -24,16 +31,20 @@ export function useSpendingLimits(
 
   const updateSpendingLimit = useCallback(
     (id: string, limit: Omit<SpendingLimit, 'id'>) => {
+      const updated: SpendingLimit = { ...limit, id };
       if (limit.enabled) {
-        setSpendingLimits(prev =>
-          prev.map(l =>
-            l.id === id ? { ...limit, id } : { ...l, enabled: false }
-          )
-        );
+        setSpendingLimits(prev => {
+          const next = prev.map(l =>
+            l.id === id ? updated : { ...l, enabled: false }
+          );
+          next.forEach(l => spendingLimitRepo.put(l).catch(console.error));
+          return next;
+        });
       } else {
         setSpendingLimits(prev =>
-          prev.map(l => l.id === id ? { ...limit, id } : l)
+          prev.map(l => l.id === id ? updated : l)
         );
+        spendingLimitRepo.put(updated).catch(console.error);
       }
     },
     [setSpendingLimits]
@@ -42,6 +53,7 @@ export function useSpendingLimits(
   const deleteSpendingLimit = useCallback(
     (id: string) => {
       setSpendingLimits(prev => prev.filter(l => l.id !== id));
+      spendingLimitRepo.remove(id).catch(console.error);
     },
     [setSpendingLimits]
   );
