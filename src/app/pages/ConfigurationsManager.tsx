@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Edit2, Trash2, X, Save, DollarSign, Moon, Sun, ArrowUpDown, TrendingUp, TrendingDown } from "lucide-react";
+import { Plus, Edit2, Trash2, X, Save, DollarSign, Moon, Sun, ArrowUpDown, TrendingUp, TrendingDown, Database, Download, Upload, AlertTriangle, Check, FileText } from "lucide-react";
 import {
   useData,
   type Account,
@@ -40,10 +40,12 @@ export function ConfigurationsManager() {
     addSpendingLimit,
     updateSpendingLimit,
     deleteSpendingLimit,
+    transactions,
+    importBackup,
   } = useData();
 
   const [activeTab, setActiveTab] = useState<
-    "accounts" | "labels" | "limits"
+    "accounts" | "labels" | "limits" | "data"
   >("accounts");
 
   // Account states
@@ -230,6 +232,143 @@ export function ConfigurationsManager() {
     }
   };
 
+  const ENCRYPTION_KEY = "control-gastos-secret-salt-2026";
+
+  // Helper for XOR + Hex encoding
+  const encodeData = (data: any): string => {
+    const jsonStr = JSON.stringify(data);
+    const bytes = new TextEncoder().encode(jsonStr);
+    const keyBytes = new TextEncoder().encode(ENCRYPTION_KEY);
+    const encryptedBytes = new Uint8Array(bytes.length);
+    for (let i = 0; i < bytes.length; i++) {
+      encryptedBytes[i] = bytes[i] ^ keyBytes[i % keyBytes.length];
+    }
+    let hex = "";
+    for (let i = 0; i < encryptedBytes.length; i++) {
+      hex += encryptedBytes[i].toString(16).padStart(2, "0");
+    }
+    return hex;
+  };
+
+  // Helper for XOR + Hex decoding
+  const decodeData = (hex: string): any => {
+    const cleanHex = hex.trim();
+    if (cleanHex.length % 2 !== 0) {
+      throw new Error("El archivo no tiene una longitud válida.");
+    }
+    const len = cleanHex.length / 2;
+    const keyBytes = new TextEncoder().encode(ENCRYPTION_KEY);
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      const byteVal = parseInt(cleanHex.substring(i * 2, i * 2 + 2), 16);
+      if (isNaN(byteVal)) {
+        throw new Error("El archivo contiene caracteres inválidos.");
+      }
+      bytes[i] = byteVal ^ keyBytes[i % keyBytes.length];
+    }
+    const jsonStr = new TextDecoder().decode(bytes);
+    return JSON.parse(jsonStr);
+  };
+
+  const [exporting, setExporting] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importSuccess, setImportSuccess] = useState(false);
+
+  const handleExport = () => {
+    try {
+      setExporting(true);
+      const backupObj = {
+        version: 1,
+        app: "control-gastos",
+        exportedAt: new Date().toISOString(),
+        accounts,
+        labels,
+        transactions,
+        spendingLimits,
+      };
+
+      const encoded = encodeData(backupObj);
+      const blob = new Blob([encoded], { type: "application/octet-stream" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `backup_control_gastos_${new Date().toISOString().slice(0, 10)}.dat`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error al exportar datos:", error);
+      alert("Hubo un error al exportar los datos.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImportError(null);
+    setImportSuccess(false);
+    setImporting(true);
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const text = event.target?.result as string;
+        if (!text) {
+          throw new Error("El archivo está vacío");
+        }
+
+        const data = decodeData(text.trim());
+
+        // Validaciones básicas de la estructura
+        if (!data || typeof data !== "object") {
+          throw new Error("Formato de datos no es un objeto válido");
+        }
+        if (data.app !== "control-gastos") {
+          throw new Error("El archivo no corresponde a esta aplicación");
+        }
+        if (
+          !Array.isArray(data.accounts) ||
+          !Array.isArray(data.labels) ||
+          !Array.isArray(data.transactions) ||
+          !Array.isArray(data.spendingLimits)
+        ) {
+          throw new Error("El archivo no tiene la estructura de datos requerida");
+        }
+
+        // Proceder con la importación
+        await importBackup({
+          accounts: data.accounts,
+          labels: data.labels,
+          transactions: data.transactions,
+          spendingLimits: data.spendingLimits,
+        });
+
+        setImportSuccess(true);
+        // Limpiar input
+        e.target.value = "";
+      } catch (error: any) {
+        console.error("Error al importar datos:", error);
+        setImportError(
+          error.message || "El archivo no es válido o está dañado."
+        );
+      } finally {
+        setImporting(false);
+      }
+    };
+
+    reader.onerror = () => {
+      setImportError("Error al leer el archivo.");
+      setImporting(false);
+    };
+
+    reader.readAsText(file);
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -250,10 +389,10 @@ export function ConfigurationsManager() {
         </div>
 
         {/* Tabs */}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-4 gap-1.5">
           <button
             onClick={() => setActiveTab("accounts")}
-            className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+            className={`py-2 px-1 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
               activeTab === "accounts"
                 ? "bg-blue-600 dark:bg-blue-500 text-white"
                 : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -263,7 +402,7 @@ export function ConfigurationsManager() {
           </button>
           <button
             onClick={() => setActiveTab("labels")}
-            className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+            className={`py-2 px-1 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
               activeTab === "labels"
                 ? "bg-blue-600 dark:bg-blue-500 text-white"
                 : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -273,13 +412,23 @@ export function ConfigurationsManager() {
           </button>
           <button
             onClick={() => setActiveTab("limits")}
-            className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+            className={`py-2 px-1 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
               activeTab === "limits"
                 ? "bg-blue-600 dark:bg-blue-500 text-white"
                 : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
             }`}
           >
             Límites
+          </button>
+          <button
+            onClick={() => setActiveTab("data")}
+            className={`py-2 px-1 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+              activeTab === "data"
+                ? "bg-blue-600 dark:bg-blue-500 text-white"
+                : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+            }`}
+          >
+            Datos
           </button>
         </div>
       </div>
@@ -526,6 +675,117 @@ export function ConfigurationsManager() {
             )}
           </div>
         </>
+      )}
+
+      {/* Data Tab */}
+      {activeTab === "data" && (
+        <div className="flex-1 overflow-auto p-4 space-y-6">
+          {/* Info Banner */}
+          <div className="p-4 rounded-xl border border-blue-100 dark:border-blue-950/30 bg-gradient-to-r from-blue-50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/10 flex gap-3 shadow-sm animate-fadeIn">
+            <Database className="w-6 h-6 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <h4 className="font-semibold text-sm text-blue-900 dark:text-blue-200">
+                Formato de Copia de Seguridad (.dat)
+              </h4>
+              <p className="text-xs text-blue-700 dark:text-blue-300/80 mt-1 leading-relaxed">
+                Este archivo contiene una versión codificada de todos tus registros (transacciones, cuentas, etiquetas y límites). Sirve como un respaldo seguro de tu información financiera y puede ser utilizado para transferir tus datos a otros navegadores o dispositivos.
+              </p>
+            </div>
+          </div>
+
+          {/* Action Sections */}
+          <div className="grid grid-cols-1 gap-4">
+            {/* Export Card */}
+            <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm space-y-4">
+              <div>
+                <h3 className="font-semibold text-sm text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                  <Download className="w-4 h-4 text-blue-500" />
+                  Exportar Datos
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Guarda un archivo de respaldo con tu estado actual en tu dispositivo.
+                </p>
+              </div>
+              <button
+                onClick={handleExport}
+                disabled={exporting}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600 active:scale-[0.98] transition-all font-medium text-sm disabled:opacity-50"
+              >
+                {exporting ? (
+                  <>Generando archivo...</>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" />
+                    Respaldar Datos (.dat)
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Import Card */}
+            <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm space-y-4">
+              <div>
+                <h3 className="font-semibold text-sm text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                  <Upload className="w-4 h-4 text-orange-500" />
+                  Importar Datos
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Restaura tu información a partir de un archivo .dat generado previamente.
+                </p>
+              </div>
+
+              {/* Warning Alert */}
+              <div className="p-3 rounded-lg border border-amber-200 dark:border-amber-950 bg-amber-50/50 dark:bg-amber-950/10 flex gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5" />
+                <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-normal font-medium">
+                  <strong>¡Atención!</strong> Importar una copia de seguridad sobrescribirá de forma permanente todos tus datos actuales de transacciones, cuentas, límites y etiquetas. Se recomienda exportar un respaldo primero.
+                </p>
+              </div>
+
+              <div className="relative">
+                <input
+                  type="file"
+                  accept=".dat"
+                  id="backup-upload"
+                  onChange={handleImport}
+                  className="hidden"
+                  disabled={importing}
+                />
+                <label
+                  htmlFor="backup-upload"
+                  className={`w-full flex flex-col items-center justify-center gap-2 px-4 py-6 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-blue-500 dark:hover:border-blue-400 transition-all cursor-pointer text-center ${
+                    importing ? "opacity-50 pointer-events-none" : ""
+                  }`}
+                >
+                  <FileText className="w-6 h-6 text-gray-400 dark:text-gray-500" />
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+                      {importing ? "Importando datos..." : "Selecciona un archivo .dat"}
+                    </p>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                      Haz clic para buscar en tu dispositivo
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              {/* Status alerts */}
+              {importSuccess && (
+                <div className="p-3 rounded-lg border border-green-200 dark:border-green-950/30 bg-green-50 dark:bg-green-950/10 flex items-center gap-2 text-green-800 dark:text-green-300 text-xs font-medium animate-fadeIn">
+                  <Check className="w-4 h-4 text-green-600 dark:text-green-500 flex-shrink-0" />
+                  <span>¡Datos importados con éxito!</span>
+                </div>
+              )}
+
+              {importError && (
+                <div className="p-3 rounded-lg border border-red-200 dark:border-red-950/30 bg-red-50 dark:bg-red-950/10 flex items-center gap-2 text-red-800 dark:text-red-300 text-xs font-medium animate-fadeIn">
+                  <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-500 flex-shrink-0" />
+                  <span>Error: {importError}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Delete Confirmation Modal */}

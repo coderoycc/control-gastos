@@ -11,7 +11,6 @@ import {
   eachDayOfInterval,
   addMonths,
   subMonths,
-  getDaysInMonth
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {

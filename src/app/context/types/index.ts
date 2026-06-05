@@ -37,6 +37,7 @@ export interface SpendingLimit {
 }
 
 export interface DataContextType {
+  isLoading: boolean;
   transactions: Transaction[];
   accounts: Account[];
   labels: Label[];
@@ -58,4 +59,10 @@ export interface DataContextType {
   getLabelById: (id: string) => Label | undefined;
   adjustBalance: (accountId: string, amount: number) => void;
   transferBetweenAccounts: (fromAccountId: string, toAccountId: string, amount: number) => void;
+  importBackup: (backupData: {
+    transactions: Transaction[];
+    accounts: Account[];
+    labels: Label[];
+    spendingLimits: SpendingLimit[];
+  }) => Promise<void>;
 }
