@@ -1,18 +1,11 @@
-/**
- * Utility functions for swipe gesture calculations and validation
- */
+import { SwipeDirection, SwipeConfig } from "../types/swipe";
 
-import { SwipeDirection, SwipeConfig } from '../types/swipe';
-
-/**
- * Default configuration values for swipe detection
- */
 export const DEFAULT_SWIPE_CONFIG: Required<SwipeConfig> = {
-  threshold: 30,
-  velocityThreshold: 0.15,
-  delta: 15,
-  preventScrollOnSwipe: true,
-  trackMouse: true
+	threshold: 30,
+	velocityThreshold: 0.15,
+	delta: 15,
+	preventScrollOnSwipe: true,
+	trackMouse: true,
 };
 
 /**
@@ -23,8 +16,8 @@ export const DEFAULT_SWIPE_CONFIG: Required<SwipeConfig> = {
  * @returns Velocity in pixels per millisecond
  */
 export function calculateVelocity(distance: number, duration: number): number {
-  if (duration <= 0) return 0;
-  return Math.abs(distance) / duration;
+	if (duration <= 0) return 0;
+	return Math.abs(distance) / duration;
 }
 
 /**
@@ -37,12 +30,12 @@ export function calculateVelocity(distance: number, duration: number): number {
  * @returns True if gesture is valid for swipe completion
  */
 export function validateGesture(
-  distance: number,
-  velocity: number,
-  threshold: number,
-  velocityThreshold: number
+	distance: number,
+	velocity: number,
+	threshold: number,
+	velocityThreshold: number,
 ): boolean {
-  return Math.abs(distance) >= threshold || velocity >= velocityThreshold;
+	return Math.abs(distance) >= threshold || velocity >= velocityThreshold;
 }
 
 /**
@@ -52,9 +45,9 @@ export function validateGesture(
  * @returns SwipeDirection or null if no clear direction
  */
 export function getSwipeDirection(deltaX: number): SwipeDirection | null {
-  if (deltaX > 0) return SwipeDirection.RIGHT;
-  if (deltaX < 0) return SwipeDirection.LEFT;
-  return null;
+	if (deltaX > 0) return SwipeDirection.RIGHT;
+	if (deltaX < 0) return SwipeDirection.LEFT;
+	return null;
 }
 
 /**
@@ -63,17 +56,18 @@ export function getSwipeDirection(deltaX: number): SwipeDirection | null {
  * @param event - Touch or mouse event
  * @returns Object with x and y coordinates
  */
-export function normalizeEventCoordinates(
-  event: TouchEvent | MouseEvent
-): { x: number; y: number } {
-  if ('touches' in event) {
-    // Touch event - use first touch point
-    const touch = event.touches[0] || event.changedTouches[0];
-    return { x: touch.clientX, y: touch.clientY };
-  } else {
-    // Mouse event
-    return { x: event.clientX, y: event.clientY };
-  }
+export function normalizeEventCoordinates(event: TouchEvent | MouseEvent): {
+	x: number;
+	y: number;
+} {
+	if ("touches" in event) {
+		// Touch event - use first touch point
+		const touch = event.touches[0] || event.changedTouches[0];
+		return { x: touch.clientX, y: touch.clientY };
+	} else {
+		// Mouse event
+		return { x: event.clientX, y: event.clientY };
+	}
 }
 
 /**
@@ -84,9 +78,13 @@ export function normalizeEventCoordinates(
  * @param deltaX - Change in X coordinate (used to scale tolerance for diagonal swipes)
  * @returns True if vertical movement is within tolerance
  */
-export function isWithinVerticalTolerance(deltaY: number, delta: number, deltaX: number = 0): boolean {
-  // Allow the vertical tolerance to scale with horizontal movement (incline support)
-  // while keeping a strict threshold for initial vertical scrolling.
-  // A factor of 0.70 allows an incline angle of up to ~35 degrees, which feels very natural.
-  return Math.abs(deltaY) <= Math.max(delta, Math.abs(deltaX) * 0.7);
+export function isWithinVerticalTolerance(
+	deltaY: number,
+	delta: number,
+	deltaX: number = 0,
+): boolean {
+	// Allow the vertical tolerance to scale with horizontal movement (incline support)
+	// while keeping a strict threshold for initial vertical scrolling.
+	// A factor of 0.70 allows an incline angle of up to ~35 degrees, which feels very natural.
+	return Math.abs(deltaY) <= Math.max(delta, Math.abs(deltaX) * 0.7);
 }

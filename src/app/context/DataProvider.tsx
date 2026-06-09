@@ -14,7 +14,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [spendingLimits, setSpendingLimits] = useState<SpendingLimit[]>([]);
 
-  // Carga inicial desde IndexedDB (solo al montar)
   useEffect(() => {
     let cancelled = false;
 
@@ -34,7 +33,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
         if (cancelled) return;
 
-        // Si no hay cuentas, es la primera vez que se abre la app → seed con datos iniciales
         const isEmpty = storedAccounts.length === 0;
 
         if (isEmpty) {
@@ -51,7 +49,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             setSpendingLimits(INITIAL_SPENDING_LIMITS);
           }
         } else {
-          // Ordenar transacciones por fecha descendente (igual que el initialState)
           const sorted = [...storedTransactions].sort(
             (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
           );
@@ -64,7 +61,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (err) {
         console.error('[DataProvider] Error cargando datos desde IndexedDB:', err);
-        // Fallback: usar datos del initialState si falla la BD
         if (!cancelled) {
           setTransactions(INITIAL_TRANSACTIONS);
           setAccounts(INITIAL_ACCOUNTS);
@@ -92,7 +88,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     labels: Label[];
     spendingLimits: SpendingLimit[];
   }) => {
-    // 1. Limpiar todos los stores de IndexedDB
     await Promise.all([
       clearStore('transactions'),
       clearStore('accounts'),
@@ -100,7 +95,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       clearStore('spendingLimits'),
     ]);
 
-    // 2. Persistir los nuevos datos en IndexedDB
     await Promise.all([
       transactionRepo.putMany(backupData.transactions),
       accountRepo.putMany(backupData.accounts),
@@ -108,7 +102,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       spendingLimitRepo.putMany(backupData.spendingLimits),
     ]);
 
-    // 3. Actualizar el estado local de React
     const sorted = [...backupData.transactions].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );

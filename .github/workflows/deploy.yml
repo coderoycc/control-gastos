@@ -1,0 +1,48 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+# Permisos requeridos para desplegar a GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Prevenir ejecuciones concurrentes conflictivas
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t control-gastos-app .
+
+      - name: Extract build from Docker container
+        run: |
+          docker create --name temp-container control-gastos-app
+          docker cp temp-container:/usr/share/nginx/html ./dist-docker
+          docker rm temp-container
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist-docker'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

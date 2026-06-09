@@ -880,7 +880,6 @@ export function ConfigurationsManager() {
         </form>
       </BottomSheet>
 
-      {/* Label Form BottomSheet */}
       <BottomSheet
         isOpen={showLabelForm}
         onClose={handleCancelLabel}

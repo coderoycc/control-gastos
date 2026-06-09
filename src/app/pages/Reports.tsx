@@ -10,7 +10,6 @@ export function Reports() {
   const { transactions } = useData();
   const [currentDate, setCurrentDate] = useState(new Date());
   
-  // Touch/swipe handling
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
 
@@ -28,10 +27,8 @@ export function Reports() {
 
     if (Math.abs(swipeDistance) > minSwipeDistance) {
       if (swipeDistance > 0) {
-        // Swipe left - next month
         setCurrentDate(prev => addMonths(prev, 1));
       } else {
-        // Swipe right - previous month
         setCurrentDate(prev => subMonths(prev, 1));
       }
     }
