@@ -4,3 +4,6 @@ guidelines/
 .vscode/
 *.log
 ATTRIBUTIONS.md
+dev-dist/
+kiro/
+.kiro/
