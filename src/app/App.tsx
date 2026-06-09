@@ -4,7 +4,6 @@ import { DataProvider } from './context';
 import { router } from './routes';
 import { useData } from './context';
 
-/** Muestra un loader mientras los datos se cargan desde IndexedDB */
 function AppContent() {
   const { isLoading } = useData();
 

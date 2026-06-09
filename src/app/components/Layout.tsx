@@ -8,22 +8,18 @@ export function Layout() {
     return location.pathname === path;
   };
 
-  // Hide FAB on add/edit pages
   const showFAB = !location.pathname.startsWith('/add') && !location.pathname.startsWith('/edit');
 
   return (
     <div className="flex flex-col h-dvh bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100">
-      {/* Main Content */}
       <main className="flex-1 overflow-auto">
         <Outlet />
       </main>
 
-      {/* Floating Action Button - Add Transaction */}
       {showFAB && (
         null
       )}
 
-      {/* Bottom Navigation */}
       <nav className="flex items-center justify-around px-2 py-2 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
         <Link
           to="/"

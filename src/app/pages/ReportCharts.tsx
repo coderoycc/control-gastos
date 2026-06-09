@@ -47,7 +47,6 @@ type ChartType = 'pie' | 'bar' | 'line';
 type GroupDimension = 'tags' | 'accounts' | 'date' | 'type';
 type FilterType = 'all' | 'entrada' | 'salida';
 
-// Paleta de colores vibrantes y estéticos para el gráfico
 const CHART_COLORS = [
   '#6366f1', // Indigo
   '#10b981', // Esmeralda / Green
@@ -66,12 +65,9 @@ export function ReportCharts() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { transactions, accounts, labels } = useData();
 
-  // Estados de visualización del reporte
   const [chartType, setChartType] = useState<ChartType>('pie');
   const [dimension, setDimension] = useState<GroupDimension>('tags');
-  const [filterType, setFilterType] = useState<FilterType>('salida'); // por defecto "gastos" ya que es lo más común de analizar
-
-  // Obtener fecha actual desde URL o del día
+  const [filterType, setFilterType] = useState<FilterType>('salida');
   const monthParam = searchParams.get('month');
   const currentDate = useMemo(() => {
     const now = new Date();
@@ -98,17 +94,12 @@ export function ReportCharts() {
     setSearchParams({ month: format(nextMonth, 'yyyy-MM') });
   };
 
-  // ── Swipe por zonas ──────────────────────────────────────────
-  // El hook ahora retorna un ref-callback directamente: los listeners
-  // se registran en el momento exacto en que el elemento se monta.
   const swipeHandlers = { onSwipeLeft: handleNextMonth, onSwipeRight: handlePreviousMonth };
 
   const headerRef = useHorizontalSwipe(swipeHandlers, { threshold: 50, delta: 20 });
   const summaryRef = useHorizontalSwipe(swipeHandlers, { threshold: 50, delta: 20 });
-  // Threshold más alto en el gráfico para no interferir con Recharts
   const chartRef = useHorizontalSwipe(swipeHandlers, { threshold: 80, delta: 20 });
 
-  // 1. Filtrar transacciones por el mes actual
   const monthTransactions = useMemo(() => {
     return transactions.filter(t => {
       const date = parseISO(t.date);
@@ -116,7 +107,6 @@ export function ReportCharts() {
     });
   }, [transactions, monthStart, monthEnd]);
 
-  // Totales rápidos para tarjetas de resumen
   const totals = useMemo(() => {
     return monthTransactions.reduce(
       (acc, t) => {
@@ -128,22 +118,19 @@ export function ReportCharts() {
     );
   }, [monthTransactions]);
 
-  // 2. Filtrar transacciones por Tipo seleccionado (entrada / salida / todos)
   const filteredTransactions = useMemo(() => {
     return monthTransactions.filter(t => {
-      if (filterType === 'all') return t.type !== 'transferencia'; // omitir transferencias en suma de flujos generales
+      if (filterType === 'all') return t.type !== 'transferencia';
       return t.type === filterType;
     });
   }, [monthTransactions, filterType]);
 
-  // 3. Procesar datos para los gráficos según la dimensión seleccionada
   const chartData = useMemo(() => {
     if (filteredTransactions.length === 0 && dimension !== 'date') {
       return [];
     }
 
     if (dimension === 'tags') {
-      // Agrupar por etiquetas
       const tagMap = new Map<string, { name: string; value: number; color?: string }>();
       
       filteredTransactions.forEach(t => {
@@ -156,7 +143,6 @@ export function ReportCharts() {
             }
           });
         } else {
-          // Sin etiqueta
           const labelId = 'no-tag';
           const current = tagMap.get(labelId) || { name: 'Sin etiqueta', value: 0, color: '#9ca3af' };
           tagMap.set(labelId, { ...current, value: current.value + t.amount });
@@ -167,12 +153,10 @@ export function ReportCharts() {
         .sort((a, b) => b.value - a.value)
         .map((item, idx) => ({
           ...item,
-          // Si no tiene color definido, asignar de la paleta
           color: item.color || CHART_COLORS[idx % CHART_COLORS.length]
         }));
 
     } else if (dimension === 'accounts') {
-      // Agrupar por cuentas
       const accountMap = new Map<string, { name: string; value: number }>();
 
       filteredTransactions.forEach(t => {
@@ -190,9 +174,6 @@ export function ReportCharts() {
         }));
 
     } else if (dimension === 'type') {
-      // Agrupar por tipo (Entrada vs Salida)
-      // Nota: Si el filtro de tipo es 'entrada' o 'salida', este gráfico será de una sola barra/torta.
-      // Pero si está en 'all', mostrará la comparativa de ingresos vs gastos.
       const typeMap = {
         entrada: { name: 'Ingresos', value: 0, color: '#10b981' },
         salida: { name: 'Gastos', value: 0, color: '#ef4444' }
@@ -209,15 +190,12 @@ export function ReportCharts() {
       return Object.values(typeMap).filter(item => item.value > 0);
 
     } else if (dimension === 'date') {
-      // Evolución temporal (Evolución diaria en el mes)
-      // Generar todos los días del mes para que el gráfico sea continuo y estético
       const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
       
       return daysInMonth.map(day => {
         const dateStr = format(day, 'yyyy-MM-dd');
         const dayLabel = format(day, 'dd');
         
-        // Filtrar transacciones de este día
         const dayTransactions = monthTransactions.filter(t => t.date === dateStr);
         
         let ingresos = 0;
@@ -241,7 +219,6 @@ export function ReportCharts() {
     return [];
   }, [filteredTransactions, dimension, labels, accounts, monthTransactions, monthStart, monthEnd]);
 
-  // Interfaces de tipo claras para las agrupaciones
   interface CategoryChartItem {
     name: string;
     value: number;
@@ -256,7 +233,6 @@ export function ReportCharts() {
     Neto: number;
   }
 
-  // Variables de datos tipadas específicamente para evitar errores de unión en el JSX
   const categoryData = useMemo<CategoryChartItem[]>(() => {
     return dimension !== 'date' ? (chartData as CategoryChartItem[]) : [];
   }, [chartData, dimension]);
@@ -265,8 +241,6 @@ export function ReportCharts() {
     return dimension === 'date' ? (chartData as DateChartItem[]) : [];
   }, [chartData, dimension]);
 
-  // Si cambiamos de dimensión, forzar un tipo de gráfico recomendado si es necesario.
-  // Por ejemplo, para evolución temporal ('date'), Pie Chart no tiene mucho sentido, así que forzamos 'line' o 'bar'.
   const handleDimensionChange = (newDimension: GroupDimension) => {
     setDimension(newDimension);
     if (newDimension === 'date') {
@@ -278,18 +252,15 @@ export function ReportCharts() {
 
   const hasData = useMemo(() => {
     if (dimension === 'date') {
-      // Hay datos si al menos un día tiene ingresos o gastos mayores a 0
       return dateData.some(d => d.Ingresos > 0 || d.Gastos > 0);
     }
     return categoryData.length > 0;
   }, [categoryData, dateData, dimension]);
 
-  // Formateador de moneda en pesos
   const formatCurrency = (val: number) => {
     return `$${val.toLocaleString()}`;
   };
 
-  // Renderizador personalizado de etiquetas de porcentaje en PieChart
   const renderPieLabel = ({ name, percent }: { name: string; percent: number }) => {
     return `${name} (${(percent * 100).toFixed(0)}%)`;
   };

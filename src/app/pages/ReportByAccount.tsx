@@ -8,17 +8,9 @@ import { Summary } from '../components/Summary';
 import { TransactionTable } from '../components/TransactionTable';
 import { SwipeableContainer } from '../../components';
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 function isValidDate(dateStr: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(dateStr) && !isNaN(new Date(dateStr).getTime());
 }
-
-// ---------------------------------------------------------------------------
-// Sub-componente: modal de filtro de fechas
-// ---------------------------------------------------------------------------
 
 interface DateFilterModalProps {
   allTransactions: boolean;
@@ -101,10 +93,6 @@ function DateFilterModal({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Sub-componente: modal selector de cuenta
-// ---------------------------------------------------------------------------
-
 interface AccountMenuModalProps {
   accounts: { id: string; name: string; detail: string }[];
   currentIndex: number;
@@ -148,15 +136,10 @@ function AccountMenuModal({ accounts, currentIndex, onSelect, onClose }: Account
   );
 }
 
-// ---------------------------------------------------------------------------
-// Página principal
-// ---------------------------------------------------------------------------
-
 export function ReportByAccount() {
   const [searchParams] = useSearchParams();
   const { transactions, accounts, labels } = useData();
 
-  // Mes recibido desde Reports (sincronizado)
   const monthParam = searchParams.get('month');
   const currentDate = monthParam ? new Date(monthParam + '-01') : new Date();
   const monthStart  = startOfMonth(currentDate);
@@ -172,13 +155,11 @@ export function ReportByAccount() {
   });
   const [dateError, setDateError] = useState('');
 
-  // --- Navegación de cuentas ---
   const prev = () => setCurrentAccountIndex(i => (i > 0 ? i - 1 : accounts.length - 1));
   const next = () => setCurrentAccountIndex(i => (i < accounts.length - 1 ? i + 1 : 0));
 
   const currentAccount = accounts[currentAccountIndex];
 
-  // --- Filtrado de transacciones ---
   const accountTransactions = useMemo(() => {
     if (!currentAccount) return [];
 
@@ -207,7 +188,6 @@ export function ReportByAccount() {
     [accountTransactions]
   );
 
-  // --- Etiqueta del rango activo ---
   const activeDateLabel = (() => {
     if (allTransactions) return 'Todas las transacciones';
     const s = parseISO(dateRange.start);
@@ -216,7 +196,6 @@ export function ReportByAccount() {
     return `${format(s, 'd MMM', { locale: es })} – ${format(e, 'd MMM yyyy', { locale: es })}`;
   })();
 
-  // --- Aplicar filtro ---
   const applyDateFilter = () => {
     const s = parseISO(dateRange.start);
     const e = parseISO(dateRange.end);
@@ -230,7 +209,6 @@ export function ReportByAccount() {
     setShowDateFilter(false);
   };
 
-  // --- Sin cuentas ---
   if (accounts.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
@@ -242,7 +220,6 @@ export function ReportByAccount() {
   return (
     <div className="flex flex-col h-full relative">
 
-      {/* ── Header compacto: cuenta + fecha ─────────────────────────────── */}
       <SwipeableContainer
         onSwipeLeft={next}
         onSwipeRight={prev}
@@ -282,7 +259,6 @@ export function ReportByAccount() {
             </button>
           </div>
 
-          {/* Fila secundaria: rango activo + indicador de cuenta */}
           <div className="flex items-center justify-between mt-0.5 px-1">
             <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{activeDateLabel}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400 shrink-0 ml-2">
@@ -292,10 +268,8 @@ export function ReportByAccount() {
         </div>
       </SwipeableContainer>
 
-      {/* ── Resumen de totales ───────────────────────────────────────────── */}
       <Summary income={totals.income} expense={totals.expense} />
 
-      {/* ── Tabla de transacciones (también swipeable) ───────────────────── */}
       <SwipeableContainer
         onSwipeLeft={next}
         onSwipeRight={prev}
@@ -311,7 +285,6 @@ export function ReportByAccount() {
         <TransactionTable transactions={accountTransactions} labels={labels} />
       </SwipeableContainer>
 
-      {/* ── Footer: totales fijos ────────────────────────────────────────── */}
       <div className="px-4 py-3 border-t-2 border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950">
         <div className="flex items-center">
           <p className="flex-1 text-base font-bold">Total</p>
@@ -324,7 +297,6 @@ export function ReportByAccount() {
         </div>
       </div>
 
-      {/* ── Modales ──────────────────────────────────────────────────────── */}
       {showAccountMenu && (
         <AccountMenuModal
           accounts={accounts}
@@ -349,7 +321,6 @@ export function ReportByAccount() {
         />
       )}
 
-      {/* ── Botón flotante de filtro ─────────────────────────────────────── */}
       <button
         onClick={() => setShowDateFilter(true)}
         className="fixed bottom-32 right-4 w-11 h-11 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center z-40"
