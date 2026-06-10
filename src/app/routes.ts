@@ -1,27 +1,27 @@
-import { createBrowserRouter } from 'react-router';
-import { Layout } from './components/Layout';
-import { TransactionsList } from './pages/TransactionsList';
-import { AddTransaction } from './pages/AddTransaction';
-import { EditTransaction } from './pages/EditTransaction';
-import { ConfigurationsManager } from './pages/ConfigurationsManager';
-import { Reports } from './pages/Reports';
-import { ReportByAccount } from './pages/ReportByAccount';
-import { ReportByLabel } from './pages/ReportByLabel';
-import { ReportCharts } from './pages/ReportCharts';
+import { createHashRouter } from "react-router";
+import { Layout } from "./components/Layout";
+import { TransactionsList } from "./pages/TransactionsList";
+import { AddTransaction } from "./pages/AddTransaction";
+import { EditTransaction } from "./pages/EditTransaction";
+import { ConfigurationsManager } from "./pages/ConfigurationsManager";
+import { Reports } from "./pages/Reports";
+import { ReportByAccount } from "./pages/ReportByAccount";
+import { ReportByLabel } from "./pages/ReportByLabel";
+import { ReportCharts } from "./pages/ReportCharts";
 
-export const router = createBrowserRouter([
+export const router = createHashRouter([
   {
-    path: '/',
+    path: "/",
     Component: Layout,
     children: [
       { index: true, Component: TransactionsList },
-      { path: 'reports', Component: Reports },
-      { path: 'reports/by-account', Component: ReportByAccount },
-      { path: 'reports/by-label', Component: ReportByLabel },
-      { path: 'reports/charts', Component: ReportCharts },
-      { path: 'add', Component: AddTransaction },
-      { path: 'edit/:id', Component: EditTransaction },
-      { path: 'accounts', Component: ConfigurationsManager },
+      { path: "reports", Component: Reports },
+      { path: "reports/by-account", Component: ReportByAccount },
+      { path: "reports/by-label", Component: ReportByLabel },
+      { path: "reports/charts", Component: ReportCharts },
+      { path: "add", Component: AddTransaction },
+      { path: "edit/:id", Component: EditTransaction },
+      { path: "accounts", Component: ConfigurationsManager },
     ],
   },
 ]);
