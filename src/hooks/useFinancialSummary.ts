@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
 	fetchFinancialSummary,
 	type FinancialSummaryResponse,
-} from "../../services/financialSummaryService";
+} from "../services/financialSummaryService";
 
 export interface UseFinancialSummaryResult {
 	data: FinancialSummaryResponse | null;

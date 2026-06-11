@@ -1,7 +1,7 @@
 import { RouterProvider } from 'react-router';
 import { ThemeProvider } from './context/ThemeContext';
 import { DataProvider } from './context';
-import { router } from './routes';
+import { router } from '../routes';
 import { useData } from './context';
 
 function AppContent() {

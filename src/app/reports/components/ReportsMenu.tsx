@@ -1,52 +1,24 @@
-import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
-import { useData } from '../context';
-import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, addMonths, subMonths, getDaysInMonth } from 'date-fns';
+import { format, getDaysInMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { BarChart3, PieChart, ChevronLeft, ChevronRight } from 'lucide-react';
-import { FinancialSummary } from '../../components';
-import { useHorizontalSwipe } from '../../hooks/useHorizontalSwipe';
+import { FinancialSummary } from '../../../components';
 
-export function Reports() {
-  const { transactions } = useData();
-  const [currentDate, setCurrentDate] = useState(new Date());
+interface ReportsMenuProps {
+  containerRef: (element: HTMLDivElement | null) => void;
+  currentDate: Date;
+  totals: { income: number; expenses: number; transfers: number };
+  onPreviousMonth: () => void;
+  onNextMonth: () => void;
+}
 
-  const handlePreviousMonth = () => {
-    setCurrentDate(prev => subMonths(prev, 1));
-  };
-
-  const handleNextMonth = () => {
-    setCurrentDate(prev => addMonths(prev, 1));
-  };
-
-  const swipeHandlers = { onSwipeLeft: handleNextMonth, onSwipeRight: handlePreviousMonth };
-  const containerRef = useHorizontalSwipe(swipeHandlers, { threshold: 50, delta: 20 });
-
-  const monthStart = startOfMonth(currentDate);
-  const monthEnd = endOfMonth(currentDate);
-
-  const monthTransactions = useMemo(() => {
-    return transactions.filter(t => {
-      const date = parseISO(t.date);
-      return isWithinInterval(date, { start: monthStart, end: monthEnd });
-    });
-  }, [transactions, monthStart, monthEnd]);
-
-  const totals = useMemo(() => {
-    return monthTransactions.reduce((acc, t) => {
-      if (t.type === 'entrada') {
-        acc.income += t.amount;
-      } else if (t.type === 'salida') {
-        acc.expenses += t.amount;
-      } else {
-        acc.transfers += t.amount;
-      }
-      return acc;
-    }, { income: 0, expenses: 0, transfers: 0 });
-  }, [monthTransactions]);
-
-  const balance = totals.income - totals.expenses;
-
+export function ReportsMenu({
+  containerRef,
+  currentDate,
+  totals,
+  onPreviousMonth,
+  onNextMonth,
+}: ReportsMenuProps) {
   return (
     <div
       ref={containerRef}
@@ -57,13 +29,13 @@ export function Reports() {
       <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
         <div className="flex items-center justify-between max-w-md mx-auto">
           <button
-            onClick={handlePreviousMonth}
+            onClick={onPreviousMonth}
             className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             aria-label="Mes anterior"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
-          
+
           <div className="flex items-center gap-2 text-center">
             <span className="text-lg font-medium text-gray-500 dark:text-gray-400">
               01
@@ -77,28 +49,28 @@ export function Reports() {
           </div>
 
           <button
-            onClick={handleNextMonth}
+            onClick={onNextMonth}
             className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             aria-label="Mes siguiente"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
         </div>
-        
+
         <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-1">
           {format(currentDate, 'yyyy', { locale: es })}
         </p>
       </div>
 
-      {/* Summary Cards - Compact Grid */}
+      {/* Summary Cards */}
       <FinancialSummary
         data={{
           income: totals.income,
           expenses: totals.expenses,
           transfers: totals.transfers,
         }}
-        startDate={monthStart}
-        endDate={monthEnd}
+        startDate={new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)}
+        endDate={new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)}
       />
 
       {/* Report Options */}
@@ -106,7 +78,7 @@ export function Reports() {
         <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
           Reportes
         </h3>
-        
+
         <div className="space-y-3">
           <Link
             to={`/reports/by-account?month=${format(currentDate, 'yyyy-MM')}`}
