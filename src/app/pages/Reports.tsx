@@ -1,38 +1,15 @@
-import { useMemo, useState, useRef } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { useData } from '../context';
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, addMonths, subMonths, getDaysInMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { BarChart3, PieChart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { FinancialSummary } from '../../components';
+import { useHorizontalSwipe } from '../../hooks/useHorizontalSwipe';
 
 export function Reports() {
   const { transactions } = useData();
   const [currentDate, setCurrentDate] = useState(new Date());
-  
-  const touchStartX = useRef(0);
-  const touchEndX = useRef(0);
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    touchEndX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = () => {
-    const swipeDistance = touchStartX.current - touchEndX.current;
-    const minSwipeDistance = 50;
-
-    if (Math.abs(swipeDistance) > minSwipeDistance) {
-      if (swipeDistance > 0) {
-        setCurrentDate(prev => addMonths(prev, 1));
-      } else {
-        setCurrentDate(prev => subMonths(prev, 1));
-      }
-    }
-  };
 
   const handlePreviousMonth = () => {
     setCurrentDate(prev => subMonths(prev, 1));
@@ -41,6 +18,9 @@ export function Reports() {
   const handleNextMonth = () => {
     setCurrentDate(prev => addMonths(prev, 1));
   };
+
+  const swipeHandlers = { onSwipeLeft: handleNextMonth, onSwipeRight: handlePreviousMonth };
+  const containerRef = useHorizontalSwipe(swipeHandlers, { threshold: 50, delta: 20 });
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -68,11 +48,10 @@ export function Reports() {
   const balance = totals.income - totals.expenses;
 
   return (
-    <div 
+    <div
+      ref={containerRef}
       className="flex flex-col h-full"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
+      style={{ touchAction: 'pan-y' }}
     >
       {/* Month Header - Compact */}
       <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
