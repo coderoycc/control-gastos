@@ -3,6 +3,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { DataProvider } from './context';
 import { router } from '../routes';
 import { useData } from './context';
+import { LockScreen } from './config/components/LockScreen';
 
 function AppContent() {
   const { isLoading } = useData();
@@ -41,7 +42,12 @@ function AppContent() {
     );
   }
 
-  return <RouterProvider router={router} />;
+  return (
+    <>
+      <LockScreen />
+      <RouterProvider router={router} />
+    </>
+  );
 }
 
 export default function App() {

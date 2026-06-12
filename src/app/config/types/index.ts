@@ -1,4 +1,4 @@
-export type ConfigTab = 'accounts' | 'labels' | 'limits' | 'data';
+export type ConfigTab = 'accounts' | 'labels' | 'limits' | 'data' | 'security';
 
 export interface DeleteTarget {
   type: 'account' | 'label' | 'limit';

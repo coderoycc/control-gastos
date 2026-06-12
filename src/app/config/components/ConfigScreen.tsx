@@ -1,15 +1,16 @@
 import { useState, useCallback } from 'react';
-import { Settings, CreditCard, Tags, DollarSign, Database, Moon, Sun } from 'lucide-react';
+import { Settings, CreditCard, Tags, DollarSign, Database, Shield, Moon, Sun } from 'lucide-react';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { AccountSection } from './AccountSection';
 import { LabelSection } from './LabelSection';
 import { LimitSection } from './LimitSection';
 import { DataSection } from './DataSection';
+import { SecuritySection } from './SecuritySection';
 import type { DeleteTarget } from '../types';
 import { useData } from '../../context';
 import { useTheme } from '../../context/ThemeContext';
 
-type TabKey = 'accounts' | 'labels' | 'limits' | 'data';
+type TabKey = 'accounts' | 'labels' | 'limits' | 'data' | 'security';
 
 interface TabConfig {
   key: TabKey;
@@ -21,6 +22,7 @@ const TABS: TabConfig[] = [
   { key: 'accounts', label: 'Cuentas', icon: CreditCard },
   { key: 'labels', label: 'Etiquetas', icon: Tags },
   { key: 'limits', label: 'Límites', icon: DollarSign },
+  { key: 'security', label: 'Seguridad', icon: Shield },
   { key: 'data', label: 'Datos', icon: Database },
 ];
 
@@ -78,15 +80,15 @@ export function ConfigScreen() {
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200 dark:border-gray-800">
+        {/* Tabs - scrollable horizontal */}
+        <div className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-800 scrollbar-none">
           {TABS.map(tab => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-3 text-xs font-medium border-b-2 transition-colors ${
+                className={`flex items-center justify-center gap-1.5 px-3 py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
                   activeTab === tab.key
                     ? 'border-blue-600 dark:border-blue-400 text-blue-700 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/10'
                     : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50'
@@ -105,6 +107,7 @@ export function ConfigScreen() {
         {activeTab === 'accounts' && <AccountSection onDelete={handleDelete} />}
         {activeTab === 'labels' && <LabelSection onDelete={handleDelete} />}
         {activeTab === 'limits' && <LimitSection onDelete={handleDelete} />}
+        {activeTab === 'security' && <SecuritySection />}
         {activeTab === 'data' && <DataSection />}
       </div>
 

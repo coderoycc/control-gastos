@@ -36,6 +36,13 @@ export interface SpendingLimit {
   enabled: boolean;
 }
 
+export interface UserSettings {
+  id: string;
+  name: string;
+  pin: string;
+  lockApp: boolean;
+}
+
 export interface DataContextType {
   isLoading: boolean;
   transactions: Transaction[];
@@ -65,4 +72,7 @@ export interface DataContextType {
     labels: Label[];
     spendingLimits: SpendingLimit[];
   }) => Promise<void>;
+  userSettings: UserSettings | null;
+  saveUserSettings: (settings: Omit<UserSettings, 'id'>) => Promise<void>;
+  deleteUserSettings: () => Promise<void>;
 }

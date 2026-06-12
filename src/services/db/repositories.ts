@@ -4,6 +4,7 @@ import type {
 	Account,
 	Label,
 	SpendingLimit,
+	UserSettings,
 } from "../../app/context/types";
 
 export const transactionRepo = {
@@ -38,4 +39,12 @@ export const spendingLimitRepo = {
 	remove: (id: string): Promise<void> => remove("spendingLimits", id),
 	putMany: (items: SpendingLimit[]): Promise<void> =>
 		putMany<SpendingLimit>("spendingLimits", items),
+};
+
+export const userSettingsRepo = {
+	getAll: (): Promise<UserSettings[]> =>
+		getAll<UserSettings>("userSettings"),
+	put: (item: UserSettings): Promise<void> =>
+		put<UserSettings>("userSettings", item),
+	remove: (id: string): Promise<void> => remove("userSettings", id),
 };
