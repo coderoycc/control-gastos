@@ -1,18 +1,3 @@
-import { useState, useMemo } from 'react';
-import { useHorizontalSwipe } from '../../hooks/useHorizontalSwipe';
-import { useNavigate, useSearchParams } from 'react-router';
-import { useData } from '../context';
-import {
-  format,
-  parseISO,
-  startOfMonth,
-  endOfMonth,
-  isWithinInterval,
-  eachDayOfInterval,
-  addMonths,
-  subMonths,
-} from 'date-fns';
-import { es } from 'date-fns/locale';
 import {
   ChevronLeft,
   ChevronRight,
@@ -25,7 +10,7 @@ import {
   Activity as TypeIcon,
   TrendingUp,
   TrendingDown,
-  AlertCircle
+  AlertCircle,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -40,234 +25,35 @@ import {
   YAxis,
   CartesianGrid,
   LineChart,
-  Line
+  Line,
 } from 'recharts';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { useReportCharts } from '../hooks/useReportCharts';
+import { formatCurrency, renderPieLabel, CHART_COLORS } from '../utils/chartUtils';
 
-type ChartType = 'pie' | 'bar' | 'line';
-type GroupDimension = 'tags' | 'accounts' | 'date' | 'type';
-type FilterType = 'all' | 'entrada' | 'salida';
-
-const CHART_COLORS = [
-  '#6366f1', // Indigo
-  '#10b981', // Esmeralda / Green
-  '#f59e0b', // Ámbar / Orange-Yellow
-  '#ef4444', // Rojo / Red
-  '#3b82f6', // Azul / Blue
-  '#8b5cf6', // Violeta / Purple
-  '#ec4899', // Rosa / Pink
-  '#14b8a6', // Teal
-  '#f97316', // Naranja
-  '#06b6d4', // Cian
-];
-
-export function ReportCharts() {
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const { transactions, accounts, labels } = useData();
-
-  const [chartType, setChartType] = useState<ChartType>('pie');
-  const [dimension, setDimension] = useState<GroupDimension>('tags');
-  const [filterType, setFilterType] = useState<FilterType>('salida');
-  const monthParam = searchParams.get('month');
-  const currentDate = useMemo(() => {
-    const now = new Date();
-    if (monthParam) {
-      const [yearStr, monthStr] = monthParam.split('-');
-      const year = parseInt(yearStr, 10);
-      const month = parseInt(monthStr, 10) - 1; // 0-indexed en JS
-      return new Date(year, month, 1);
-    }
-    return new Date(now.getFullYear(), now.getMonth(), 1);
-  }, [monthParam]);
-
-  const monthStart = startOfMonth(currentDate);
-  const monthEnd = endOfMonth(currentDate);
-
-  // Navegación de meses
-  const handlePreviousMonth = () => {
-    const prevMonth = subMonths(currentDate, 1);
-    setSearchParams({ month: format(prevMonth, 'yyyy-MM') });
-  };
-
-  const handleNextMonth = () => {
-    const nextMonth = addMonths(currentDate, 1);
-    setSearchParams({ month: format(nextMonth, 'yyyy-MM') });
-  };
-
-  const swipeHandlers = { onSwipeLeft: handleNextMonth, onSwipeRight: handlePreviousMonth };
-
-  const headerRef = useHorizontalSwipe(swipeHandlers, { threshold: 50, delta: 20 });
-  const summaryRef = useHorizontalSwipe(swipeHandlers, { threshold: 50, delta: 20 });
-  const chartRef = useHorizontalSwipe(swipeHandlers, { threshold: 80, delta: 20 });
-
-  const monthTransactions = useMemo(() => {
-    return transactions.filter(t => {
-      const date = parseISO(t.date);
-      return isWithinInterval(date, { start: monthStart, end: monthEnd });
-    });
-  }, [transactions, monthStart, monthEnd]);
-
-  const totals = useMemo(() => {
-    return monthTransactions.reduce(
-      (acc, t) => {
-        if (t.type === 'entrada') acc.income += t.amount;
-        else if (t.type === 'salida') acc.expenses += t.amount;
-        return acc;
-      },
-      { income: 0, expenses: 0 }
-    );
-  }, [monthTransactions]);
-
-  const filteredTransactions = useMemo(() => {
-    return monthTransactions.filter(t => {
-      if (filterType === 'all') return t.type !== 'transferencia';
-      return t.type === filterType;
-    });
-  }, [monthTransactions, filterType]);
-
-  const chartData = useMemo(() => {
-    if (filteredTransactions.length === 0 && dimension !== 'date') {
-      return [];
-    }
-
-    if (dimension === 'tags') {
-      const tagMap = new Map<string, { name: string; value: number; color?: string }>();
-      
-      filteredTransactions.forEach(t => {
-        if (t.labels && t.labels.length > 0) {
-          t.labels.forEach(labelId => {
-            const labelObj = labels.find(l => l.id === labelId);
-            if (labelObj) {
-              const current = tagMap.get(labelId) || { name: labelObj.name, value: 0, color: labelObj.color };
-              tagMap.set(labelId, { ...current, value: current.value + t.amount });
-            }
-          });
-        } else {
-          const labelId = 'no-tag';
-          const current = tagMap.get(labelId) || { name: 'Sin etiqueta', value: 0, color: '#9ca3af' };
-          tagMap.set(labelId, { ...current, value: current.value + t.amount });
-        }
-      });
-
-      return Array.from(tagMap.values())
-        .sort((a, b) => b.value - a.value)
-        .map((item, idx) => ({
-          ...item,
-          color: item.color || CHART_COLORS[idx % CHART_COLORS.length]
-        }));
-
-    } else if (dimension === 'accounts') {
-      const accountMap = new Map<string, { name: string; value: number }>();
-
-      filteredTransactions.forEach(t => {
-        const accountObj = accounts.find(a => a.id === t.accountId);
-        const name = accountObj ? accountObj.name : 'Cuenta Desconocida';
-        const current = accountMap.get(t.accountId) || { name, value: 0 };
-        accountMap.set(t.accountId, { ...current, value: current.value + t.amount });
-      });
-
-      return Array.from(accountMap.values())
-        .sort((a, b) => b.value - a.value)
-        .map((item, idx) => ({
-          ...item,
-          color: CHART_COLORS[idx % CHART_COLORS.length]
-        }));
-
-    } else if (dimension === 'type') {
-      const typeMap = {
-        entrada: { name: 'Ingresos', value: 0, color: '#10b981' },
-        salida: { name: 'Gastos', value: 0, color: '#ef4444' }
-      };
-
-      filteredTransactions.forEach(t => {
-        if (t.type === 'entrada') {
-          typeMap.entrada.value += t.amount;
-        } else if (t.type === 'salida') {
-          typeMap.salida.value += t.amount;
-        }
-      });
-
-      return Object.values(typeMap).filter(item => item.value > 0);
-
-    } else if (dimension === 'date') {
-      const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
-      
-      return daysInMonth.map(day => {
-        const dateStr = format(day, 'yyyy-MM-dd');
-        const dayLabel = format(day, 'dd');
-        
-        const dayTransactions = monthTransactions.filter(t => t.date === dateStr);
-        
-        let ingresos = 0;
-        let gastos = 0;
-        
-        dayTransactions.forEach(t => {
-          if (t.type === 'entrada') ingresos += t.amount;
-          else if (t.type === 'salida') gastos += t.amount;
-        });
-
-        return {
-          name: dayLabel,
-          fullDate: format(day, "dd 'de' MMMM", { locale: es }),
-          'Ingresos': ingresos,
-          'Gastos': gastos,
-          'Neto': ingresos - gastos
-        };
-      });
-    }
-
-    return [];
-  }, [filteredTransactions, dimension, labels, accounts, monthTransactions, monthStart, monthEnd]);
-
-  interface CategoryChartItem {
-    name: string;
-    value: number;
-    color?: string;
-  }
-
-  interface DateChartItem {
-    name: string;
-    fullDate: string;
-    Ingresos: number;
-    Gastos: number;
-    Neto: number;
-  }
-
-  const categoryData = useMemo<CategoryChartItem[]>(() => {
-    return dimension !== 'date' ? (chartData as CategoryChartItem[]) : [];
-  }, [chartData, dimension]);
-
-  const dateData = useMemo<DateChartItem[]>(() => {
-    return dimension === 'date' ? (chartData as DateChartItem[]) : [];
-  }, [chartData, dimension]);
-
-  const handleDimensionChange = (newDimension: GroupDimension) => {
-    setDimension(newDimension);
-    if (newDimension === 'date') {
-      setChartType('line');
-    } else if (dimension === 'date') {
-      setChartType('pie');
-    }
-  };
-
-  const hasData = useMemo(() => {
-    if (dimension === 'date') {
-      return dateData.some(d => d.Ingresos > 0 || d.Gastos > 0);
-    }
-    return categoryData.length > 0;
-  }, [categoryData, dateData, dimension]);
-
-  const formatCurrency = (val: number) => {
-    return `$${val.toLocaleString()}`;
-  };
-
-  const renderPieLabel = ({ name, percent }: { name: string; percent: number }) => {
-    return `${name} (${(percent * 100).toFixed(0)}%)`;
-  };
+export function ChartView() {
+  const {
+    headerRef,
+    summaryRef,
+    chartRef,
+    currentDate,
+    chartType,
+    dimension,
+    filterType,
+    totals,
+    categoryData,
+    dateData,
+    hasData,
+    setChartType,
+    setFilterType,
+    handleDimensionChange,
+    handlePreviousMonth,
+    handleNextMonth,
+  } = useReportCharts();
 
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
-
       {/* SELECTOR DE MESES — swipe + flechas */}
       <div
         ref={headerRef}
@@ -329,7 +115,7 @@ export function ReportCharts() {
           </div>
         </div>
 
-        {/* SELECTOR DE DIMENSIÓN DE AGRUPACIÓN (TAGS, CUENTAS, ETC.) */}
+        {/* SELECTOR DE DIMENSIÓN DE AGRUPACIÓN */}
         <div className="bg-white dark:bg-gray-900 p-1.5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex gap-1">
           <button
             onClick={() => handleDimensionChange('tags')}
@@ -380,7 +166,7 @@ export function ReportCharts() {
           </button>
         </div>
 
-        {/* SELECTOR DE FILTRO DE TRANSACCIONES (GASTOS, INGRESOS, TODOS) */}
+        {/* SELECTOR DE FILTRO DE TRANSACCIONES */}
         {dimension !== 'date' && dimension !== 'type' && (
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Mostrar:</span>
@@ -419,7 +205,7 @@ export function ReportCharts() {
           </div>
         )}
 
-        {/* SECTOR GRÁFICO PRINCIPAL — swipeable con threshold alto para no interferir con Recharts */}
+        {/* SECTOR GRÁFICO PRINCIPAL */}
         <div
           ref={chartRef}
           className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col gap-4"
@@ -427,13 +213,15 @@ export function ReportCharts() {
         >
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300">
-              {dimension === 'tags' && `Distribución por Etiquetas (${filterType === 'salida' ? 'Gastos' : filterType === 'entrada' ? 'Ingresos' : 'Todos'})`}
-              {dimension === 'accounts' && `Distribución por Cuentas (${filterType === 'salida' ? 'Gastos' : filterType === 'entrada' ? 'Ingresos' : 'Todos'})`}
+              {dimension === 'tags' &&
+                `Distribución por Etiquetas (${filterType === 'salida' ? 'Gastos' : filterType === 'entrada' ? 'Ingresos' : 'Todos'})`}
+              {dimension === 'accounts' &&
+                `Distribución por Cuentas (${filterType === 'salida' ? 'Gastos' : filterType === 'entrada' ? 'Ingresos' : 'Todos'})`}
               {dimension === 'date' && 'Evolución de Ingresos y Gastos'}
               {dimension === 'type' && 'Comparativa de Flujos'}
             </h3>
 
-            {/* SELECTOR DE TIPO DE GRÁFICO (PIE, BAR, LINE) */}
+            {/* SELECTOR DE TIPO DE GRÁFICO */}
             <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 p-0.5 rounded-lg border border-gray-200/50 dark:border-gray-800">
               <button
                 onClick={() => setChartType('pie')}
@@ -481,21 +269,20 @@ export function ReportCharts() {
                 <AlertCircle className="w-10 h-10 text-gray-400 dark:text-gray-600 mb-2.5 animate-pulse" />
                 <p className="text-sm font-semibold">Sin transacciones registradas</p>
                 <p className="text-xs text-gray-400 mt-1 max-w-[220px]">
-                  {dimension === 'date' 
-                    ? 'No se registran movimientos para graficar en este mes.' 
+                  {dimension === 'date'
+                    ? 'No se registran movimientos para graficar en este mes.'
                     : `No hay ${filterType === 'salida' ? 'gastos' : filterType === 'entrada' ? 'ingresos' : 'movimientos'} registrados para este análisis en este mes.`}
                 </p>
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                {/* 1. GRÁFICO DE TORTA */}
                 {chartType === 'pie' && dimension !== 'date' ? (
                   <PieChart>
                     <Pie
                       data={categoryData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={dimension === 'type' ? 45 : 0} // Dona para flujos
+                      innerRadius={dimension === 'type' ? 45 : 0}
                       outerRadius="75%"
                       paddingAngle={3}
                       dataKey="value"
@@ -503,23 +290,24 @@ export function ReportCharts() {
                       label={renderPieLabel}
                     >
                       {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color || CHART_COLORS[index % CHART_COLORS.length]} />
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={entry.color || CHART_COLORS[index % CHART_COLORS.length]}
+                        />
                       ))}
                     </Pie>
-                    <Tooltip 
+                    <Tooltip
                       formatter={(value: number) => [formatCurrency(value), 'Monto']}
                       contentStyle={{
                         backgroundColor: 'rgba(31, 41, 55, 0.95)',
                         borderColor: '#374151',
                         borderRadius: '0.75rem',
-                        color: '#f9fafb'
+                        color: '#f9fafb',
                       }}
                     />
                   </PieChart>
-                ) : // 2. GRÁFICO DE BARRAS
-                chartType === 'bar' ? (
+                ) : chartType === 'bar' ? (
                   dimension === 'date' ? (
-                    // Barras para evolución de tiempo
                     <BarChart data={dateData} margin={{ top: 10, right: 5, left: -20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.15} />
                       <XAxis dataKey="name" fontSize={10} tickLine={false} />
@@ -536,7 +324,7 @@ export function ReportCharts() {
                           backgroundColor: 'rgba(31, 41, 55, 0.95)',
                           borderColor: '#374151',
                           borderRadius: '0.75rem',
-                          color: '#f9fafb'
+                          color: '#f9fafb',
                         }}
                       />
                       <Legend iconSize={8} wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
@@ -544,7 +332,6 @@ export function ReportCharts() {
                       <Bar dataKey="Gastos" fill="#ef4444" radius={[3, 3, 0, 0]} />
                     </BarChart>
                   ) : (
-                    // Barras estándar (etiquetas, cuentas, flujos)
                     <BarChart data={categoryData} margin={{ top: 10, right: 5, left: -20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.15} />
                       <XAxis dataKey="name" fontSize={10} tickLine={false} />
@@ -555,61 +342,59 @@ export function ReportCharts() {
                           backgroundColor: 'rgba(31, 41, 55, 0.95)',
                           borderColor: '#374151',
                           borderRadius: '0.75rem',
-                          color: '#f9fafb'
+                          color: '#f9fafb',
                         }}
                       />
                       <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                         {categoryData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color || CHART_COLORS[index % CHART_COLORS.length]} />
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={entry.color || CHART_COLORS[index % CHART_COLORS.length]}
+                          />
                         ))}
                       </Bar>
                     </BarChart>
                   )
+                ) : dimension === 'date' ? (
+                  <LineChart data={dateData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.15} />
+                    <XAxis dataKey="name" fontSize={10} tickLine={false} />
+                    <YAxis fontSize={10} tickLine={false} />
+                    <Tooltip
+                      labelFormatter={(label, items) => {
+                        if (items && items[0]) {
+                          return items[0].payload.fullDate;
+                        }
+                        return `Día ${label}`;
+                      }}
+                      formatter={(value: number) => [formatCurrency(value), '']}
+                      contentStyle={{
+                        backgroundColor: 'rgba(31, 41, 55, 0.95)',
+                        borderColor: '#374151',
+                        borderRadius: '0.75rem',
+                        color: '#f9fafb',
+                      }}
+                    />
+                    <Legend iconSize={8} wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                    <Line type="monotone" dataKey="Ingresos" stroke="#10b981" strokeWidth={2.5} dot={{ r: 1 }} activeDot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="Gastos" stroke="#ef4444" strokeWidth={2.5} dot={{ r: 1 }} activeDot={{ r: 4 }} />
+                  </LineChart>
                 ) : (
-                  // 3. GRÁFICO DE LÍNEAS
-                  dimension === 'date' ? (
-                    // Línea para evolución diaria
-                    <LineChart data={dateData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.15} />
-                      <XAxis dataKey="name" fontSize={10} tickLine={false} />
-                      <YAxis fontSize={10} tickLine={false} />
-                      <Tooltip
-                        labelFormatter={(label, items) => {
-                          if (items && items[0]) {
-                            return items[0].payload.fullDate;
-                          }
-                          return `Día ${label}`;
-                        }}
-                        formatter={(value: number) => [formatCurrency(value), '']}
-                        contentStyle={{
-                          backgroundColor: 'rgba(31, 41, 55, 0.95)',
-                          borderColor: '#374151',
-                          borderRadius: '0.75rem',
-                          color: '#f9fafb'
-                        }}
-                      />
-                      <Legend iconSize={8} wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                      <Line type="monotone" dataKey="Ingresos" stroke="#10b981" strokeWidth={2.5} dot={{ r: 1 }} activeDot={{ r: 4 }} />
-                      <Line type="monotone" dataKey="Gastos" stroke="#ef4444" strokeWidth={2.5} dot={{ r: 1 }} activeDot={{ r: 4 }} />
-                    </LineChart>
-                  ) : (
-                    // Línea estándar para categorías (ordenado por monto)
-                    <LineChart data={categoryData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.15} />
-                      <XAxis dataKey="name" fontSize={10} tickLine={false} />
-                      <YAxis fontSize={10} tickLine={false} />
-                      <Tooltip
-                        formatter={(value: number) => [formatCurrency(value), 'Monto']}
-                        contentStyle={{
-                          backgroundColor: 'rgba(31, 41, 55, 0.95)',
-                          borderColor: '#374151',
-                          borderRadius: '0.75rem',
-                          color: '#f9fafb'
-                        }}
-                      />
-                      <Line type="monotone" dataKey="value" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }} />
-                    </LineChart>
-                  )
+                  <LineChart data={categoryData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.15} />
+                    <XAxis dataKey="name" fontSize={10} tickLine={false} />
+                    <YAxis fontSize={10} tickLine={false} />
+                    <Tooltip
+                      formatter={(value: number) => [formatCurrency(value), 'Monto']}
+                      contentStyle={{
+                        backgroundColor: 'rgba(31, 41, 55, 0.95)',
+                        borderColor: '#374151',
+                        borderRadius: '0.75rem',
+                        color: '#f9fafb',
+                      }}
+                    />
+                    <Line type="monotone" dataKey="value" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                  </LineChart>
                 )}
               </ResponsiveContainer>
             )}
@@ -625,25 +410,33 @@ export function ReportCharts() {
                 {categoryData.length} ítems
               </span>
             </div>
-            
+
             <div className="divide-y divide-gray-150 dark:divide-gray-800/60 max-h-60 overflow-y-auto">
               {categoryData.map((item, idx) => {
-                // Calcular porcentaje
                 const totalSum = categoryData.reduce((acc, curr) => acc + curr.value, 0);
                 const percent = totalSum > 0 ? (item.value / totalSum) * 100 : 0;
-                
+
                 return (
-                  <div key={idx} className="p-3 flex items-center justify-between hover:bg-gray-50/80 dark:hover:bg-gray-800/30 transition-colors">
+                  <div
+                    key={idx}
+                    className="p-3 flex items-center justify-between hover:bg-gray-50/80 dark:hover:bg-gray-800/30 transition-colors"
+                  >
                     <div className="flex items-center gap-2.5">
-                      <div 
+                      <div
                         className="w-3.5 h-3.5 rounded-full flex-shrink-0"
                         style={{ backgroundColor: item.color }}
                       />
-                      <span className="text-sm font-semibold truncate max-w-[140px] sm:max-w-xs">{item.name}</span>
+                      <span className="text-sm font-semibold truncate max-w-[140px] sm:max-w-xs">
+                        {item.name}
+                      </span>
                     </div>
                     <div className="text-right">
-                      <span className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(item.value)}</span>
-                      <span className="text-2xs text-gray-400 block font-medium">{percent.toFixed(1)}%</span>
+                      <span className="text-sm font-bold text-gray-900 dark:text-white">
+                        {formatCurrency(item.value)}
+                      </span>
+                      <span className="text-2xs text-gray-400 block font-medium">
+                        {percent.toFixed(1)}%
+                      </span>
                     </div>
                   </div>
                 );

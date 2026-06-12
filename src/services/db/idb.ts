@@ -5,13 +5,15 @@ export type StoreName =
 	| "transactions"
 	| "accounts"
 	| "labels"
-	| "spendingLimits";
+	| "spendingLimits"
+	| "userSettings";
 
 const ALL_STORES: StoreName[] = [
 	"transactions",
 	"accounts",
 	"labels",
 	"spendingLimits",
+	"userSettings",
 ];
 
 let dbInstance: IDBDatabase | null = null;

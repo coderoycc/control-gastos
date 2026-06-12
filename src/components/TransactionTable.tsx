@@ -1,7 +1,7 @@
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Link } from 'react-router';
-import type { Transaction } from '../context';
+import type { Transaction } from '../app/context';
 
 interface TransactionTableProps {
   transactions: Transaction[];

@@ -4,4 +4,5 @@ export {
 	accountRepo,
 	labelRepo,
 	spendingLimitRepo,
+	userSettingsRepo,
 } from "./repositories";

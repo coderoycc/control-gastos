@@ -2,8 +2,8 @@ import React, { createContext, useState, useEffect } from 'react';
 import { DataContextType } from './types';
 import { useTransactions, useAccounts, useLabels, useSpendingLimits } from './hooks';
 import { INITIAL_ACCOUNTS, INITIAL_LABELS, INITIAL_TRANSACTIONS, INITIAL_SPENDING_LIMITS } from './initialState';
-import { transactionRepo, accountRepo, labelRepo, spendingLimitRepo, clearStore } from '../../services/db';
-import type { Transaction, Account, Label, SpendingLimit } from './types';
+import { transactionRepo, accountRepo, labelRepo, spendingLimitRepo, userSettingsRepo, clearStore } from '../../services/db';
+import type { Transaction, Account, Label, SpendingLimit, UserSettings } from './types';
 
 export const DataContext = createContext<DataContextType | undefined>(undefined);
 
@@ -13,6 +13,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [labels, setLabels] = useState<Label[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [spendingLimits, setSpendingLimits] = useState<SpendingLimit[]>([]);
+  const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -23,12 +24,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           storedTransactions,
           storedAccounts,
           storedLabels,
-          storedSpendingLimits
+          storedSpendingLimits,
+          storedUserSettings,
         ] = await Promise.all([
           transactionRepo.getAll(),
           accountRepo.getAll(),
           labelRepo.getAll(),
           spendingLimitRepo.getAll(),
+          userSettingsRepo.getAll(),
         ]);
 
         if (cancelled) return;
@@ -58,6 +61,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             setLabels(storedLabels);
             setSpendingLimits(storedSpendingLimits);
           }
+        }
+
+        if (!cancelled && storedUserSettings.length > 0) {
+          setUserSettings(storedUserSettings[0]);
         }
       } catch (err) {
         console.error('[DataProvider] Error cargando datos desde IndexedDB:', err);
@@ -111,6 +118,21 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setSpendingLimits(backupData.spendingLimits);
   };
 
+  const saveUserSettings = async (settings: Omit<UserSettings, 'id'>) => {
+    const existing = userSettings;
+    const id = existing?.id ?? crypto.randomUUID();
+    const updated: UserSettings = { ...settings, id };
+    await userSettingsRepo.put(updated);
+    setUserSettings(updated);
+  };
+
+  const deleteUserSettings = async () => {
+    if (userSettings) {
+      await userSettingsRepo.remove(userSettings.id);
+      setUserSettings(null);
+    }
+  };
+
   const value: DataContextType = {
     isLoading,
     ...transactionsHook,
@@ -118,6 +140,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     ...labelsHook,
     ...spendingLimitsHook,
     importBackup,
+    userSettings,
+    saveUserSettings,
+    deleteUserSettings,
   };
 
   return (

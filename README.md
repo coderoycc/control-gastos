@@ -53,7 +53,6 @@ src/
       TransactionsList.tsx
       Reports.tsx
       ReportByAccount.tsx
-      ReportByLabel.tsx
       ReportCharts.tsx
       ConfigurationsManager.tsx
     routes.ts
@@ -71,7 +70,6 @@ src/
 | `/edit/:id`           | `EditTransaction`       | Edición o eliminación de transacción                 |
 | `/reports`            | `Reports`               | Menú de reportes                                     |
 | `/reports/by-account` | `ReportByAccount`       | Reporte detallado por cuenta                         |
-| `/reports/by-label`   | `ReportByLabel`         | Reporte por etiqueta                                 |
 | `/reports/charts`     | `ReportCharts`          | Gráficos interactivos                                |
 | `/accounts`           | `ConfigurationsManager` | Configuración de cuentas, etiquetas, límites y datos |
 

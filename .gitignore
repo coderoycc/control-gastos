@@ -2,6 +2,7 @@ node_modules/
 dist/
 guidelines/
 .vscode/
+.opencode/
 *.log
 ATTRIBUTIONS.md
 dev-dist/
