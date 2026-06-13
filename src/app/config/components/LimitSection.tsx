@@ -1,4 +1,4 @@
-import { Plus, Edit2, Trash2, DollarSign } from 'lucide-react';
+import { Plus, Edit2, Trash2, DollarSign, AlertCircle } from 'lucide-react';
 import { BottomSheet } from '../../../components';
 import { useConfigLimits } from '../hooks/useConfigLimits';
 
@@ -14,6 +14,7 @@ export function LimitSection({ onDelete }: LimitSectionProps) {
     title,
     amount,
     enabled,
+    hasAnotherActive,
     setTitle,
     setAmount,
     setEnabled,
@@ -23,16 +24,31 @@ export function LimitSection({ onDelete }: LimitSectionProps) {
     handleSubmit,
   } = useConfigLimits();
 
+  const hasActiveLimit = spendingLimits.some(limit => limit.enabled);
+
   return (
     <>
       <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-800">
         <button
           onClick={openAdd}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-orange-500 to-pink-500 text-white hover:from-orange-600 hover:to-pink-600 transition-all shadow-sm hover:shadow-md"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-sm hover:shadow-md"
         >
           <Plus className="w-4 h-4" />
           Nuevo Límite
         </button>
+      </div>
+
+      <div className="px-4 pt-3">
+        <div className={`flex items-center gap-2.5 px-3 py-2 rounded-lg border text-xs transition-colors ${
+          hasActiveLimit 
+            ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-100 dark:border-blue-900/50 text-blue-800 dark:text-blue-300' 
+            : 'bg-gray-50 dark:bg-gray-800/30 border-gray-100 dark:border-gray-800/50 text-gray-500 dark:text-gray-400'
+        }`}>
+          <AlertCircle className={`w-4 h-4 flex-shrink-0 ${
+            hasActiveLimit ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'
+          }`} />
+          <span>{hasActiveLimit ? 'Alertas de gastos mensuales activadas.' : 'Sin límites activos.'}</span>
+        </div>
       </div>
 
       <div className="flex-1 overflow-auto px-4 py-3">
@@ -57,7 +73,7 @@ export function LimitSection({ onDelete }: LimitSectionProps) {
                   <div
                     className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 ${
                       limit.enabled
-                        ? 'bg-gradient-to-r from-orange-500 to-pink-500'
+                        ? 'bg-orange-500'
                         : 'bg-gray-400 dark:bg-gray-600'
                     }`}
                   >
@@ -76,7 +92,7 @@ export function LimitSection({ onDelete }: LimitSectionProps) {
                     </p>
                   </div>
                   {limit.enabled && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 text-white">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500 text-white">
                       Activo
                     </span>
                   )}
@@ -137,14 +153,30 @@ export function LimitSection({ onDelete }: LimitSectionProps) {
               />
             </div>
           </div>
-          <label className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer">
+          <label 
+            className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
+              hasAnotherActive 
+                ? 'opacity-60 cursor-not-allowed bg-gray-50/50 dark:bg-gray-800/20' 
+                : 'hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer'
+            }`}
+          >
             <input
               type="checkbox"
               checked={enabled}
               onChange={e => setEnabled(e.target.checked)}
-              className="w-5 h-5 rounded border-gray-300 dark:border-gray-600"
+              disabled={hasAnotherActive}
+              className={`w-5 h-5 rounded border-gray-300 dark:border-gray-600 ${
+                hasAnotherActive ? 'cursor-not-allowed' : 'cursor-pointer'
+              }`}
             />
-            <span className="text-sm">Habilitado</span>
+            <div className="flex flex-col">
+              <span className="text-sm font-medium">Habilitado</span>
+              {hasAnotherActive && (
+                <span className="text-[10px] text-orange-600 dark:text-orange-400">
+                  Ya tienes otro límite activo. Desactívalo primero para poder activar este.
+                </span>
+              )}
+            </div>
           </label>
           <div className="flex gap-2 pt-2">
             <button
@@ -156,7 +188,7 @@ export function LimitSection({ onDelete }: LimitSectionProps) {
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-orange-500 to-pink-500 text-white hover:from-orange-600 hover:to-pink-600 transition-all"
+              className="flex-1 px-4 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all"
             >
               {editingId ? 'Actualizar' : 'Guardar'}
             </button>

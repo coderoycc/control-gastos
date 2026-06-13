@@ -1,8 +1,12 @@
-import { ArrowLeft, Save, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, AlertTriangle, X } from 'lucide-react';
 import { useEditTransactionForm } from '../hooks/useEditTransactionForm';
 import { getTypeButtonClass, getBackgroundColor } from '../utils/transactionStyles';
+import { useParams } from 'react-router';
+import { useSpendingLimitAlert } from '../hooks/useSpendingLimitAlert';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../../../components/ui/tooltip';
 
 export function EditTransactionForm() {
+  const { id } = useParams<{ id: string }>();
   const {
     type,
     date,
@@ -27,6 +31,16 @@ export function EditTransactionForm() {
     goBack,
   } = useEditTransactionForm();
 
+  const {
+    activeLimit,
+    monthlyExpensesTotalWithoutCurrent,
+    totalWithCurrent,
+    percentage,
+    alertType,
+    isAlertVisible,
+    setIsAlertVisible,
+  } = useSpendingLimitAlert({ amount, date, type, excludeId: id });
+
   return (
     <div className={`flex flex-col h-full transition-colors ${getBackgroundColor(type)}`}>
       {/* Header */}
@@ -38,13 +52,97 @@ export function EditTransactionForm() {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <h2 className="font-medium flex-1">Editar Transacción</h2>
+
+        {activeLimit && type === 'salida' && alertType && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className="w-6 h-6 rounded-full bg-orange-500 hover:bg-orange-600 text-white flex items-center justify-center font-bold text-xs shadow-sm transition-all hover:scale-105 cursor-pointer mr-1"
+                >
+                  ?
+                </button>
+              </TooltipTrigger>
+              <TooltipContent 
+                side="bottom" 
+                align="end" 
+                className="p-3 max-w-[260px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xl rounded-lg text-gray-800 dark:text-gray-200 z-[110]"
+              >
+                <div className="space-y-1.5 text-xs">
+                  <p className="font-semibold text-orange-600 dark:text-orange-400 border-b border-gray-100 dark:border-gray-800 pb-1">
+                    Detalle del Límite de Gasto
+                  </p>
+                  <div className="flex justify-between gap-4">
+                    <span>Límite establecido:</span>
+                    <span className="font-mono font-semibold text-gray-900 dark:text-white">
+                      ${activeLimit.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span>Gastos del mes (otros):</span>
+                    <span className="font-mono">
+                      ${monthlyExpensesTotalWithoutCurrent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-4 border-b border-gray-100 dark:border-gray-800 pb-1">
+                    <span>Monto modificado:</span>
+                    <span className="font-mono">
+                      ${(parseFloat(amount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-4 font-semibold text-gray-900 dark:text-white pt-0.5">
+                    <span>Total Proyectado:</span>
+                    <span className="font-mono">
+                      ${totalWithCurrent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-4 text-[10px] text-gray-500 dark:text-gray-400">
+                    <span>Porcentaje de límite:</span>
+                    <span className={`font-mono font-bold ${percentage >= 100 ? 'text-red-500 dark:text-red-400' : percentage >= 90 ? 'text-orange-500 dark:text-orange-400' : 'text-gray-600 dark:text-gray-300'}`}>
+                      {percentage.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+
         <button
           onClick={() => setShowDeleteConfirm(true)}
-          className="p-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+          className="p-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors mr-1"
         >
           <Trash2 className="w-5 h-5" />
         </button>
       </div>
+
+      {/* Banner de alerta temporal */}
+      {isAlertVisible && activeLimit && (
+        <div className={`px-4 py-2.5 text-xs flex items-center justify-between border-b transition-all animate-in slide-in-from-top duration-300 ${
+          alertType === 'danger_100'
+            ? 'bg-red-50 dark:bg-red-950/20 border-red-100 dark:border-red-900/30 text-red-800 dark:text-red-300'
+            : 'bg-amber-50 dark:bg-amber-950/20 border-amber-100 dark:border-amber-900/30 text-amber-800 dark:text-amber-300'
+        }`}>
+          <div className="flex items-center gap-2">
+            <AlertTriangle className={`w-4 h-4 flex-shrink-0 ${
+              alertType === 'danger_100' ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'
+            }`} />
+            <span>
+              {alertType === 'danger_100'
+                ? `¡Límite excedido! Has alcanzado o superado el 100% de tu límite ($${activeLimit.amount.toLocaleString()}).`
+                : `¡Cuidado! Tus gastos acumulados del mes están por alcanzar el 90% del límite ($${activeLimit.amount.toLocaleString()}).`
+              }
+            </span>
+          </div>
+          <button
+            onClick={() => setIsAlertVisible(false)}
+            className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="flex-1 overflow-auto px-4 py-3">

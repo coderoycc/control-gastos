@@ -28,6 +28,7 @@ export function BottomSheet({ isOpen, onClose, title, children }: BottomSheetPro
 
   const handleTouchStart = (e: React.TouchEvent) => {
     startY.current = e.touches[0].clientY;
+    currentY.current = e.touches[0].clientY;
     isDragging.current = true;
   };
 
@@ -58,7 +59,7 @@ export function BottomSheet({ isOpen, onClose, title, children }: BottomSheetPro
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end">
+    <div className="fixed inset-0 z-[100] flex items-end">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/50 transition-opacity"

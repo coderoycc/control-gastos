@@ -14,9 +14,10 @@ export function useConfigLimits() {
     setEditingId(null);
     setTitle('');
     setAmount('');
-    setEnabled(true);
+    const hasActive = spendingLimits.some(limit => limit.enabled);
+    setEnabled(!hasActive);
     setShowForm(true);
-  }, []);
+  }, [spendingLimits]);
 
   const openEdit = useCallback((limit: SpendingLimit) => {
     setEditingId(limit.id);
@@ -31,8 +32,9 @@ export function useConfigLimits() {
     setEditingId(null);
     setTitle('');
     setAmount('');
-    setEnabled(true);
-  }, []);
+    const hasActive = spendingLimits.some(limit => limit.enabled);
+    setEnabled(!hasActive);
+  }, [spendingLimits]);
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
@@ -60,6 +62,8 @@ export function useConfigLimits() {
     [title, amount, enabled, editingId, updateSpendingLimit, addSpendingLimit, close]
   );
 
+  const hasAnotherActive = spendingLimits.some(limit => limit.enabled && limit.id !== editingId);
+
   return {
     spendingLimits,
     showForm,
@@ -67,6 +71,7 @@ export function useConfigLimits() {
     title,
     amount,
     enabled,
+    hasAnotherActive,
     setTitle,
     setAmount,
     setEnabled,

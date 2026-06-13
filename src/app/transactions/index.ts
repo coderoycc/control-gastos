@@ -12,6 +12,7 @@ export { EditTransactionForm } from './components/EditTransactionForm';
 // Hooks
 export { useMonthNavigation } from './hooks/useMonthNavigation';
 export { useTransactionFilters } from './hooks/useTransactionFilters';
+export { useSpendingLimitAlert } from './hooks/useSpendingLimitAlert';
 
 // Types (solo los que necesita quien importa el módulo)
 export type { TransactionFiltersResult } from './hooks/useTransactionFilters';

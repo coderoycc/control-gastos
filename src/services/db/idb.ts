@@ -1,5 +1,5 @@
 const DB_NAME = "control-gastos-db";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 export type StoreName =
 	| "transactions"
@@ -26,18 +26,12 @@ export function openDB(): Promise<IDBDatabase> {
 
 		request.onupgradeneeded = (event) => {
 			const db = (event.target as IDBOpenDBRequest).result;
-			const oldVersion = event.oldVersion;
 
-			if (oldVersion > 0) {
-				for (const store of ALL_STORES) {
-					if (db.objectStoreNames.contains(store)) {
-						db.deleteObjectStore(store);
-					}
-				}
-			}
-
+			// Migración no destructiva: Solo crea los almacenes que no existen
 			for (const store of ALL_STORES) {
-				db.createObjectStore(store, { keyPath: "id" });
+				if (!db.objectStoreNames.contains(store)) {
+					db.createObjectStore(store, { keyPath: "id" });
+				}
 			}
 		};
 

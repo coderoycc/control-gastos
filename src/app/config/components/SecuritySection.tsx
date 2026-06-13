@@ -91,9 +91,7 @@ export function SecuritySection() {
             PIN de Seguridad
           </h3>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {hasExistingPin && !editing
-              ? 'Tu PIN está configurado y protegido con hash SHA-256.'
-              : hasExistingPin
+            {hasExistingPin 
                 ? 'Actualiza tu PIN de seguridad.'
                 : 'Configura un PIN de 4 dígitos para proteger tus datos.'}
           </p>
