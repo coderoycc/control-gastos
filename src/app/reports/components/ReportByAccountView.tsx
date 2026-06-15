@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, ChevronDown, Filter } from 'lucide-react';
+import { ChevronDown, Filter } from 'lucide-react';
 import { SwipeableContainer } from '../../../components';
 import { Summary } from '../../../components/Summary';
 import { TransactionTable } from '../../../components/TransactionTable';
@@ -20,8 +20,8 @@ export function ReportByAccountView() {
     activeDateLabel,
     accountTransactions,
     totals,
-    prev,
-    next,
+    handlePreviousMonth,
+    handleNextMonth,
     setCurrentAccountIndex,
     setShowAccountMenu,
     setShowDateFilter,
@@ -43,70 +43,39 @@ export function ReportByAccountView() {
 
   return (
     <div className="flex flex-col h-full relative">
-      <SwipeableContainer
-        onSwipeLeft={next}
-        onSwipeRight={prev}
-        animated
-        animationType="slide-fade"
-        animationDuration={220}
-        threshold={15}
-        delta={45}
-        preventScrollOnSwipe={true}
-        className="border-b border-gray-200 dark:border-gray-800 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950"
-      >
-        <div className="px-3 py-2 max-w-md mx-auto">
-          <div className="flex items-center gap-1">
-            <button
-              onClick={prev}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shrink-0"
-              aria-label="Cuenta anterior"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
+      <div className="border-b border-gray-200 dark:border-gray-800 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
+        <div className="px-3 py-2 max-w-md mx-auto flex flex-col items-center">
+          <button
+            onClick={() => setShowAccountMenu(true)}
+            className="flex items-center justify-center gap-1.5 py-1 px-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors min-w-0"
+          >
+            <span className="text-lg font-bold truncate">
+              {currentAccount?.name}
+            </span>
+            <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />
+          </button>
 
-            <button
-              onClick={() => setShowAccountMenu(true)}
-              className="flex-1 flex items-center justify-center gap-1.5 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors min-w-0"
-            >
-              <span className="text-lg font-bold truncate">
-                {currentAccount?.name}
-              </span>
-              <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />
-            </button>
-
-            <button
-              onClick={next}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shrink-0"
-              aria-label="Cuenta siguiente"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between mt-0.5 px-1">
-            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-              {activeDateLabel}
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 shrink-0 ml-2">
-              {currentAccountIndex + 1}/{accounts.length}
-            </p>
-          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+            {activeDateLabel}
+          </p>
         </div>
-      </SwipeableContainer>
+      </div>
 
       <Summary income={totals.income} expense={totals.expense} />
 
       <SwipeableContainer
-        onSwipeLeft={next}
-        onSwipeRight={prev}
+        onSwipeLeft={handleNextMonth}
+        onSwipeRight={handlePreviousMonth}
+        threshold={30}
+        velocityThreshold={0.15}
+        delta={30}
+        preventScrollOnSwipe
+        trackMouse
         animated
         animationType="slide-fade"
-        animationDuration={220}
-        threshold={15}
-        delta={45}
-        preventScrollOnSwipe={true}
-        className="flex-1"
-        style={{ overflowY: 'auto' }}
+        animationDuration={350}
+        animationEasing="ease-in-out"
+        className="flex-1 overflow-auto"
       >
         <TransactionTable transactions={accountTransactions} labels={labels} />
       </SwipeableContainer>

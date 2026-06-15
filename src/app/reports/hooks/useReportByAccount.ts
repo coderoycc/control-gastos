@@ -1,19 +1,28 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router';
-import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, addMonths, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useData } from '../../context';
 import { isValidDate } from '../utils/reportValidators';
-
+ 
 export function useReportByAccount() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { transactions, accounts, labels } = useData();
-
+ 
   const monthParam = searchParams.get('month');
-  const currentDate = monthParam ? new Date(monthParam + '-01') : new Date();
-  const monthStart = startOfMonth(currentDate);
-  const monthEnd = endOfMonth(currentDate);
-
+  const currentDate = useMemo(() => {
+    const now = new Date();
+    if (monthParam) {
+      const [yearStr, monthStr] = monthParam.split('-');
+      const year = parseInt(yearStr, 10);
+      const month = parseInt(monthStr, 10) - 1;
+      return new Date(year, month, 1);
+    }
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  }, [monthParam]);
+  const monthStart = useMemo(() => startOfMonth(currentDate), [currentDate]);
+  const monthEnd = useMemo(() => endOfMonth(currentDate), [currentDate]);
+ 
   const [currentAccountIndex, setCurrentAccountIndex] = useState(0);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [showDateFilter, setShowDateFilter] = useState(false);
@@ -23,16 +32,27 @@ export function useReportByAccount() {
     end: format(monthEnd, 'yyyy-MM-dd'),
   });
   const [dateError, setDateError] = useState('');
-
+ 
+  useEffect(() => {
+    if (!allTransactions) {
+      setDateRange({
+        start: format(monthStart, 'yyyy-MM-dd'),
+        end: format(monthEnd, 'yyyy-MM-dd'),
+      });
+    }
+  }, [monthStart, monthEnd, allTransactions]);
+ 
   const prev = useCallback(() => {
     setCurrentAccountIndex(i => (i > 0 ? i - 1 : accounts.length - 1));
   }, [accounts.length]);
-
+ 
   const next = useCallback(() => {
     setCurrentAccountIndex(i => (i < accounts.length - 1 ? i + 1 : 0));
   }, [accounts.length]);
-
-  const currentAccount = accounts[currentAccountIndex];
+ 
+  const currentAccount = currentAccountIndex === -1
+    ? { id: 'all', name: 'Todas las cuentas', detail: 'Todas las cuentas' }
+    : accounts[currentAccountIndex];
 
   const accountTransactions = useMemo(() => {
     if (!currentAccount) return [];
@@ -44,7 +64,7 @@ export function useReportByAccount() {
 
     return transactions
       .filter(t => {
-        if (t.accountId !== currentAccount.id) return false;
+        if (currentAccount.id !== 'all' && t.accountId !== currentAccount.id) return false;
         if (allTransactions || !rangeValid) return true;
         return isWithinInterval(parseISO(t.date), {
           start: filterStart,
@@ -103,6 +123,16 @@ export function useReportByAccount() {
     []
   );
 
+  const handlePreviousMonth = useCallback(() => {
+    const prevMonth = subMonths(currentDate, 1);
+    setSearchParams({ month: format(prevMonth, 'yyyy-MM') });
+  }, [currentDate, setSearchParams]);
+
+  const handleNextMonth = useCallback(() => {
+    const nextMonth = addMonths(currentDate, 1);
+    setSearchParams({ month: format(nextMonth, 'yyyy-MM') });
+  }, [currentDate, setSearchParams]);
+
   return {
     // State
     accounts,
@@ -130,5 +160,7 @@ export function useReportByAccount() {
     handleToggleAll,
     handleDateChange,
     applyDateFilter,
+    handlePreviousMonth,
+    handleNextMonth,
   };
 }

@@ -24,6 +24,20 @@ export function AccountMenuModal({
           <h3 className="font-medium">Seleccionar Cuenta</h3>
         </div>
         <div className="p-2">
+          <button
+            onClick={() => {
+              onSelect(-1);
+              onClose();
+            }}
+            className={`w-full text-left px-4 py-3 rounded-lg transition-colors mb-1 ${
+              currentIndex === -1
+                ? 'bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-medium'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+          >
+            <p className="font-medium">Todas las cuentas</p>
+          </button>
+
           {accounts.map((account, index) => (
             <button
               key={account.id}
