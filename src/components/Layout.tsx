@@ -1,5 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router';
 import { Moon, Sun, List, Plus, Settings, BarChart3 } from 'lucide-react';
+import { PWAInstallBanner } from './PWAInstallBanner';
 
 export function Layout() {
   const location = useLocation();
@@ -19,6 +20,8 @@ export function Layout() {
       {showFAB && (
         null
       )}
+
+      <PWAInstallBanner />
 
       <nav className="flex items-center justify-around px-2 py-2 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
         <Link

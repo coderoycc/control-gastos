@@ -73,8 +73,10 @@ export default defineConfig({
         theme_color: "#030213",
         background_color: "#030213",
         display: "standalone",
-        display_override: ["window-controls-overlay", "standalone", "browser"],
-        orientation: "portrait-primary",
+        orientation: "portrait",
+        launch_handler: {
+          client_mode: "navigate-existing",
+        },
         start_url: process.env.GITHUB_ACTIONS ? "/control-gastos/" : "/",
         scope: process.env.GITHUB_ACTIONS ? "/control-gastos/" : "/",
         lang: "es",
