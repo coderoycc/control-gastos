@@ -28,6 +28,9 @@ export default defineConfig({
         background_color: "#ffffff",
         display: "standalone",
         orientation: "portrait",
+        launch_handler: {
+          client_mode: "navigate-existing",
+        },
         start_url: process.env.GITHUB_ACTIONS ? "/control-gastos/" : "/",
         scope: process.env.GITHUB_ACTIONS ? "/control-gastos/" : "/",
         icons: [
