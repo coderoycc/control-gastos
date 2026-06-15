@@ -10,22 +10,68 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       injectRegister: "auto",
+
       devOptions: {
         enabled: true,
+        type: "module",
       },
+
       workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
+        globPatterns: [
+          "**/*.{js,mjs,css,html,ico,png,jpg,jpeg,svg,webp,woff,woff2,ttf,eot,json,webmanifest}",
+        ],
         cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
+        navigateFallback: "index.html",
+        navigateFallbackDenylist: [/^\/api\//, /\.[a-z]{2,4}$/i],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "google-fonts-stylesheets",
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365,
+              },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "google-fonts-webfonts",
+              cacheableResponse: { statuses: [0, 200] },
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 60 * 60 * 24 * 365,
+              },
+            },
+          },
+          {
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "images-cache",
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 60 * 60 * 24 * 30,
+              },
+            },
+          },
+        ],
       },
+
       manifest: {
         name: "Control de Gastos",
         short_name: "Gastos",
         description:
           "Aplicación moderna para el control inteligente de finanzas y gastos personales",
         theme_color: "#030213",
-        background_color: "#ffffff",
+        background_color: "#030213",
         display: "standalone",
         orientation: "portrait",
         launch_handler: {
@@ -33,22 +79,27 @@ export default defineConfig({
         },
         start_url: process.env.GITHUB_ACTIONS ? "/control-gastos/" : "/",
         scope: process.env.GITHUB_ACTIONS ? "/control-gastos/" : "/",
+        lang: "es",
+        dir: "ltr",
+        categories: ["finance", "productivity"],
         icons: [
           {
             src: "pwa-192x192.png",
             sizes: "192x192",
             type: "image/png",
+            purpose: "any",
           },
           {
             src: "pwa-512x512.png",
             sizes: "512x512",
             type: "image/png",
+            purpose: "any",
           },
           {
             src: "pwa-512x512.png",
             sizes: "512x512",
             type: "image/png",
-            purpose: "any maskable",
+            purpose: "maskable",
           },
           {
             src: "apple-touch-icon.png",
@@ -61,7 +112,6 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      // Alias @ to the src directory
       "@": path.resolve(__dirname, "./src"),
     },
   },
@@ -73,7 +123,5 @@ export default defineConfig({
     host: "0.0.0.0",
     port: 4173,
   },
-
-  // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ["**/*.svg", "**/*.csv"],
 });

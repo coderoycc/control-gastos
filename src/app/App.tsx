@@ -4,6 +4,7 @@ import { DataProvider } from './context';
 import { router } from '../routes';
 import { useData } from './context';
 import { LockScreen } from './config/components/LockScreen';
+import { UpdatePrompt } from '../components/UpdatePrompt';
 
 function AppContent() {
   const { isLoading } = useData();
@@ -55,6 +56,7 @@ export default function App() {
     <ThemeProvider>
       <DataProvider>
         <AppContent />
+        <UpdatePrompt />
       </DataProvider>
     </ThemeProvider>
   );
