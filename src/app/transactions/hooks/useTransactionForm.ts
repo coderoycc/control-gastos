@@ -2,6 +2,8 @@ import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { useData, type TransactionType } from '../../context';
 
+export const TRANSACTION_TYPES: TransactionType[] = ['entrada', 'salida', 'transferencia'];
+
 export function useTransactionForm() {
   const navigate = useNavigate();
   const { addTransaction, accounts, labels, transferBetweenAccounts } = useData();
@@ -28,6 +30,31 @@ export function useTransactionForm() {
         return [];
       }
       return [labelId];
+    });
+
+    if (type !== 'transferencia') {
+      const selectedLabel = filteredLabels.find(l => l.id === labelId);
+      if (selectedLabel) {
+        const capitalizedName = selectedLabel.name.charAt(0).toUpperCase() + selectedLabel.name.slice(1);
+        const isDetailEmpty = detail.trim() === '';
+        const matchesAnyLabel = filteredLabels.some(
+          l => l.name.toLowerCase() === detail.trim().toLowerCase()
+        );
+
+        if (isDetailEmpty || matchesAnyLabel) {
+          setDetail(capitalizedName);
+        }
+      }
+    }
+  }, [type, detail, filteredLabels, setDetail]);
+
+  const cycleType = useCallback((direction: 'left' | 'right') => {
+    setType(prev => {
+      const idx = TRANSACTION_TYPES.indexOf(prev);
+      if (direction === 'left') {
+        return TRANSACTION_TYPES[(idx + 1) % 3];
+      }
+      return TRANSACTION_TYPES[(idx - 1 + 3) % 3];
     });
   }, []);
 
@@ -96,6 +123,7 @@ export function useTransactionForm() {
     setToAccountId,
     // Actions
     toggleLabel,
+    cycleType,
     handleSubmit,
     goBack,
   };

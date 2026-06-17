@@ -25,7 +25,7 @@ export function useReportByAccount() {
  
   const [currentAccountIndex, setCurrentAccountIndex] = useState(0);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
-  const [showDateFilter, setShowDateFilter] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [allTransactions, setAllTransactions] = useState(false);
   const [dateRange, setDateRange] = useState({
     start: format(monthStart, 'yyyy-MM-dd'),
@@ -54,6 +54,19 @@ export function useReportByAccount() {
     ? { id: 'all', name: 'Todas las cuentas', detail: 'Todas las cuentas' }
     : accounts[currentAccountIndex];
 
+  const selectedAccountId = currentAccountIndex === -1 ? 'all' : currentAccount?.id || 'all';
+
+  const handleAccountChange = useCallback((accountId: string) => {
+    if (accountId === 'all') {
+      setCurrentAccountIndex(-1);
+    } else {
+      const index = accounts.findIndex(a => a.id === accountId);
+      if (index !== -1) {
+        setCurrentAccountIndex(index);
+      }
+    }
+  }, [accounts]);
+
   const accountTransactions = useMemo(() => {
     if (!currentAccount) return [];
 
@@ -64,7 +77,11 @@ export function useReportByAccount() {
 
     return transactions
       .filter(t => {
-        if (currentAccount.id !== 'all' && t.accountId !== currentAccount.id) return false;
+        if (currentAccount.id !== 'all') {
+          const isSource = t.accountId === currentAccount.id;
+          const isDestination = t.type === 'transferencia' && t.toAccountId === currentAccount.id;
+          if (!isSource && !isDestination) return false;
+        }
         if (allTransactions || !rangeValid) return true;
         return isWithinInterval(parseISO(t.date), {
           start: filterStart,
@@ -74,18 +91,36 @@ export function useReportByAccount() {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [transactions, currentAccount, dateRange, allTransactions]);
 
-  const totals = useMemo(
-    () =>
-      accountTransactions.reduce(
+  const totals = useMemo(() => {
+    if (currentAccount.id === 'all') {
+      return accountTransactions.reduce(
         (acc, t) => {
           if (t.type === 'entrada') acc.income += t.amount;
           if (t.type === 'salida') acc.expense += t.amount;
           return acc;
         },
         { income: 0, expense: 0 }
-      ),
-    [accountTransactions]
-  );
+      );
+    }
+
+    return accountTransactions.reduce(
+      (acc, t) => {
+        if (t.type === 'entrada') {
+          acc.income += t.amount;
+        } else if (t.type === 'salida') {
+          acc.expense += t.amount;
+        } else if (t.type === 'transferencia') {
+          if (t.accountId === currentAccount.id) {
+            acc.expense += t.amount;
+          } else {
+            acc.income += t.amount;
+          }
+        }
+        return acc;
+      },
+      { income: 0, expense: 0 }
+    );
+  }, [accountTransactions, currentAccount.id]);
 
   const activeDateLabel = (() => {
     if (allTransactions) return 'Todas las transacciones';
@@ -107,7 +142,7 @@ export function useReportByAccount() {
       return;
     }
     setDateError('');
-    setShowDateFilter(false);
+    setShowFilters(false);
   }, [dateRange]);
 
   const handleToggleAll = useCallback((checked: boolean) => {
@@ -140,11 +175,12 @@ export function useReportByAccount() {
     currentAccount,
     currentAccountIndex,
     showAccountMenu,
-    showDateFilter,
+    showFilters,
     allTransactions,
     dateRange,
     dateError,
     activeDateLabel,
+    selectedAccountId,
     // Derived
     accountTransactions,
     totals,
@@ -153,10 +189,11 @@ export function useReportByAccount() {
     next,
     setCurrentAccountIndex,
     setShowAccountMenu,
-    setShowDateFilter,
+    setShowFilters,
     setAllTransactions,
     setDateRange,
     setDateError,
+    handleAccountChange,
     handleToggleAll,
     handleDateChange,
     applyDateFilter,

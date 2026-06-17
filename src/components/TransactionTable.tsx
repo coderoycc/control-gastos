@@ -6,16 +6,18 @@ import type { Transaction } from '../app/context';
 interface TransactionTableProps {
   transactions: Transaction[];
   labels: Array<{ id: string; name: string; color: string }>;
+  accounts?: Array<{ id: string; name: string }>;
+  currentAccountId?: string;
 }
 
-export function TransactionTable({ transactions, labels }: TransactionTableProps) {
+export function TransactionTable({ transactions, labels, accounts, currentAccountId }: TransactionTableProps) {
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       {/* Table Header */}
       <div className="flex items-center px-4 py-2 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 text-xs font-medium text-gray-600 dark:text-gray-400 overflow-x-hidden">
         <div className="flex-1 min-w-0">Detalle</div>
-        <div className="w-20 text-right flex-shrink-0">Gasto</div>
-        <div className="w-20 text-right flex-shrink-0">Ingreso</div>
+        <div className="w-20 text-right flex-shrink-0">Egresos</div>
+        <div className="w-20 text-right flex-shrink-0">Ingresos</div>
       </div>
 
       {/* Table Body */}
@@ -52,7 +54,11 @@ export function TransactionTable({ transactions, labels }: TransactionTableProps
                     )}
                     {transaction.type === 'transferencia' && (
                     <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                      → {(transaction as any).toAccountId ? `Destino: ${(transaction as any).toAccountId}` : 'Transferencia'}
+                      {(() => {
+                        const fromName = accounts?.find(a => a.id === transaction.accountId)?.name || 'Origen';
+                        const toName = accounts?.find(a => a.id === transaction.toAccountId)?.name || 'Destino';
+                        return `${fromName} → ${toName}`;
+                      })()}
                     </p>
                     )}
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -67,9 +73,14 @@ export function TransactionTable({ transactions, labels }: TransactionTableProps
                         -${transaction.amount.toLocaleString()}
                       </p>
                     )}
-                    {transaction.type === 'transferencia' && (
+                    {transaction.type === 'transferencia' && currentAccountId === 'all' && (
                       <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                        →${transaction.amount.toLocaleString()}
+                        ${transaction.amount.toLocaleString()}
+                      </p>
+                    )}
+                    {transaction.type === 'transferencia' && currentAccountId && currentAccountId !== 'all' && transaction.accountId === currentAccountId && (
+                      <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                        -${transaction.amount.toLocaleString()}
                       </p>
                     )}
                   </div>
@@ -78,6 +89,16 @@ export function TransactionTable({ transactions, labels }: TransactionTableProps
                   <div className="w-20 text-right">
                     {transaction.type === 'entrada' && (
                       <p className="text-sm font-semibold text-green-600 dark:text-green-400">
+                        +${transaction.amount.toLocaleString()}
+                      </p>
+                    )}
+                    {transaction.type === 'transferencia' && currentAccountId === 'all' && (
+                      <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                        ${transaction.amount.toLocaleString()}
+                      </p>
+                    )}
+                    {transaction.type === 'transferencia' && currentAccountId && currentAccountId !== 'all' && transaction.toAccountId === currentAccountId && (
+                      <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
                         +${transaction.amount.toLocaleString()}
                       </p>
                     )}
