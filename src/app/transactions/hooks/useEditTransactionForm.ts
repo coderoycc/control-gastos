@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useData, type TransactionType } from '../../context';
 
+export const TRANSACTION_TYPES: TransactionType[] = ['entrada', 'salida', 'transferencia'];
+
 export function useEditTransactionForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -35,8 +37,8 @@ export function useEditTransactionForm() {
         setAccountId(transaction.accountId);
         setToAccountId((transaction as any).toAccountId || '');
         setSelectedLabels(transaction.labels);
-      } else {
-        navigate('/');
+        } else {
+        navigate(-1);
       }
     }
   }, [id, getTransactionById, navigate]);
@@ -56,10 +58,35 @@ export function useEditTransactionForm() {
       }
       return [labelId];
     });
+
+    if (type !== 'transferencia') {
+      const selectedLabel = filteredLabels.find(l => l.id === labelId);
+      if (selectedLabel) {
+        const capitalizedName = selectedLabel.name.charAt(0).toUpperCase() + selectedLabel.name.slice(1);
+        const isDetailEmpty = detail.trim() === '';
+        const matchesAnyLabel = filteredLabels.some(
+          l => l.name.toLowerCase() === detail.trim().toLowerCase()
+        );
+
+        if (isDetailEmpty || matchesAnyLabel) {
+          setDetail(capitalizedName);
+        }
+      }
+    }
+  }, [type, detail, filteredLabels, setDetail]);
+
+  const cycleType = useCallback((direction: 'left' | 'right') => {
+    setType(prev => {
+      const idx = TRANSACTION_TYPES.indexOf(prev);
+      if (direction === 'left') {
+        return TRANSACTION_TYPES[(idx + 1) % 3];
+      }
+      return TRANSACTION_TYPES[(idx - 1 + 3) % 3];
+    });
   }, []);
 
   const goBack = useCallback(() => {
-    navigate('/');
+    navigate(-1);
   }, [navigate]);
 
   const handleSubmit = useCallback(
@@ -104,7 +131,7 @@ export function useEditTransactionForm() {
         });
       }
 
-      navigate('/');
+      navigate(-1);
     },
     [
       type, date, detail, amount, accountId, toAccountId, selectedLabels, id,
@@ -115,7 +142,7 @@ export function useEditTransactionForm() {
   const handleDelete = useCallback(() => {
     if (id) {
       deleteTransaction(id);
-      navigate('/');
+      navigate(-1);
     }
   }, [id, deleteTransaction, navigate]);
 
@@ -142,6 +169,7 @@ export function useEditTransactionForm() {
     setShowDeleteConfirm,
     // Actions
     toggleLabel,
+    cycleType,
     handleSubmit,
     handleDelete,
     goBack,

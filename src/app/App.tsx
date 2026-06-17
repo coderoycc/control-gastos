@@ -4,10 +4,12 @@ import { DataProvider } from './context';
 import { router } from '../routes';
 import { useData } from './context';
 import { LockScreen } from './config/components/LockScreen';
+import { useAppLock } from './config/hooks/useAppLock';
 import { UpdatePrompt } from '../components/UpdatePrompt';
 
 function AppContent() {
   const { isLoading } = useData();
+  const { isLocked } = useAppLock();
 
   if (isLoading) {
     return (
@@ -45,7 +47,7 @@ function AppContent() {
 
   return (
     <>
-      <LockScreen />
+      <LockScreen key={isLocked ? 'locked' : 'unlocked'} />
       <RouterProvider router={router} />
     </>
   );

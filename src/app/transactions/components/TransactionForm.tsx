@@ -1,8 +1,9 @@
 import { ArrowLeft, Save, AlertTriangle, X } from 'lucide-react';
-import { useTransactionForm } from '../hooks/useTransactionForm';
-import { getTypeButtonClass, getBackgroundColor } from '../utils/transactionStyles';
+import { useTransactionForm, TRANSACTION_TYPES } from '../hooks/useTransactionForm';
+import { getBackgroundColor } from '../utils/transactionStyles';
 import { useSpendingLimitAlert } from '../hooks/useSpendingLimitAlert';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../../../components/ui/tooltip';
+import { useHorizontalSwipe } from '../../../hooks/useHorizontalSwipe';
 
 export function TransactionForm() {
   const {
@@ -22,6 +23,7 @@ export function TransactionForm() {
     setAccountId,
     setToAccountId,
     toggleLabel,
+    cycleType,
     handleSubmit,
     goBack,
   } = useTransactionForm();
@@ -36,8 +38,17 @@ export function TransactionForm() {
     setIsAlertVisible,
   } = useSpendingLimitAlert({ amount, date, type });
 
+  const swipeRef = useHorizontalSwipe({
+    onSwipeLeft: () => cycleType('left'),
+    onSwipeRight: () => cycleType('right'),
+  }, {
+    threshold: 30,
+    velocityThreshold: 0.15,
+    preventScrollOnSwipe: true,
+  });
+
   return (
-    <div className={`flex flex-col h-full transition-colors ${getBackgroundColor(type)}`}>
+    <div ref={swipeRef} className={`flex flex-col h-full transition-colors ${getBackgroundColor(type)}`}>
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-200 dark:border-gray-800">
         <button
@@ -136,33 +147,30 @@ export function TransactionForm() {
       {/* Form */}
       <form onSubmit={handleSubmit} className="flex-1 overflow-auto px-4 py-3">
         <div className="space-y-3 max-w-md mx-auto">
-          {/* Type Selection */}
+          {/* Type Selection - Tabs */}
           <div>
-            <label className="block text-xs mb-1.5 text-gray-700 dark:text-gray-300">
+            <label className="block text-xs mb-1 text-gray-700 dark:text-gray-300">
               Tipo de Transacción
             </label>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setType('entrada')}
-                className={getTypeButtonClass('entrada', type)}
-              >
-                Entrada
-              </button>
-              <button
-                type="button"
-                onClick={() => setType('salida')}
-                className={getTypeButtonClass('salida', type)}
-              >
-                Salida
-              </button>
-              <button
-                type="button"
-                onClick={() => setType('transferencia')}
-                className={getTypeButtonClass('transferencia', type)}
-              >
-                Transferencia
-              </button>
+            <div className="flex border-b border-gray-200 dark:border-gray-700">
+              {TRANSACTION_TYPES.map(t => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setType(t)}
+                  className={`flex-1 py-1.5 text-xs font-medium transition-colors ${
+                    type === t
+                      ? t === 'entrada'
+                        ? 'text-green-600 dark:text-green-400 border-b-2 border-green-600 dark:border-green-400'
+                        : t === 'salida'
+                        ? 'text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400'
+                        : 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                      : 'text-gray-500 dark:text-gray-400'
+                  }`}
+                >
+                  {t === 'entrada' ? 'Entrada' : t === 'salida' ? 'Salida' : 'Transferencia'}
+                </button>
+              ))}
             </div>
           </div>
 
