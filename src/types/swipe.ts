@@ -44,16 +44,35 @@ export interface SwipingEvent {
  * Configuration options for swipe detection
  */
 export interface SwipeConfig {
-  /** Minimum distance in pixels to register as a swipe (default: 50) */
+  /**
+   * Minimum horizontal distance in pixels to register as a completed swipe.
+   * @default 40
+   */
   threshold?: number;
-  /** Minimum velocity in pixels/ms to register as a swipe (default: 0.3) */
+  /**
+   * Minimum velocity in pixels/ms to validate the swipe.
+   * @default 0.3
+   */
   velocityThreshold?: number;
-  /** Maximum vertical movement allowed in pixels (default: 10) */
-  delta?: number;
-  /** Whether to prevent default scroll behavior during swipes (default: false) */
-  preventScrollOnSwipe?: boolean;
-  /** Whether to track mouse events in addition to touch events (default: false) */
+  /**
+   * Minimum movement (px) required in any axis before deciding intent.
+   * Prevents reacting to micro-movements during a tap.
+   * @default 15
+   */
+  lockThreshold?: number;
+  /**
+   * Whether to track mouse pointer events in addition to touch/stylus.
+   * @default true
+   */
   trackMouse?: boolean;
+  /**
+   * @deprecated Use lockThreshold instead. Kept for backward compatibility.
+   */
+  delta?: number;
+  /**
+   * @deprecated No longer needed; scroll prevention is automatic.
+   */
+  preventScrollOnSwipe?: boolean;
 }
 
 /**
@@ -91,10 +110,15 @@ export type SwipeCallback = (event: SwipeEvent) => void;
 export type SwipingCallback = (event: SwipingEvent) => void;
 
 /**
+ * Callback function type for tap events
+ */
+export type TapCallback = () => void;
+
+/**
  * Complete set of swipe event handlers
  */
 export interface SwipeHandlers {
-  /** Called when a swipe gesture starts */
+  /** Called when a swipe gesture starts (after SWIPE_CONFIRMED) */
   onSwipeStart?: SwipeStartCallback;
   /** Called when a swipe gesture ends (completed or canceled) */
   onSwipeEnd?: SwipeEndCallback;
@@ -104,4 +128,9 @@ export interface SwipeHandlers {
   onSwipeRight?: SwipeCallback;
   /** Called continuously during an active swipe gesture */
   onSwiping?: SwipingCallback;
+  /**
+   * Called when the interaction is determined to be a tap
+   * (distance < 10px and duration < 300ms).
+   */
+  onTap?: TapCallback;
 }

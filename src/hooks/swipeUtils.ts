@@ -1,15 +1,19 @@
 import { SwipeDirection, SwipeConfig } from "../types/swipe";
 
-export const DEFAULT_SWIPE_CONFIG: Required<SwipeConfig> = {
-	threshold: 30,
-	velocityThreshold: 0.15,
-	delta: 15,
-	preventScrollOnSwipe: true,
+/**
+ * Default configuration aligned with the new Pointer Events architecture.
+ */
+export const DEFAULT_SWIPE_CONFIG: Required<
+	Pick<SwipeConfig, "threshold" | "velocityThreshold" | "lockThreshold" | "trackMouse">
+> = {
+	threshold: 40,
+	lockThreshold: 15,
+	velocityThreshold: 0.3,
 	trackMouse: true,
 };
 
 /**
- * Calculates the velocity of a gesture in pixels per millisecond
+ * Calculates the velocity of a gesture in pixels per millisecond.
  *
  * @param distance - Total distance traveled in pixels
  * @param duration - Time duration in milliseconds
@@ -21,13 +25,13 @@ export function calculateVelocity(distance: number, duration: number): number {
 }
 
 /**
- * Validates if a gesture meets the minimum requirements for a swipe
+ * Validates if a gesture meets the minimum requirements for a completed swipe.
  *
- * @param distance - Horizontal distance traveled
- * @param velocity - Gesture velocity in pixels/ms
+ * @param distance  - Absolute horizontal distance traveled
+ * @param velocity  - Gesture velocity in pixels/ms
  * @param threshold - Minimum distance threshold
  * @param velocityThreshold - Minimum velocity threshold
- * @returns True if gesture is valid for swipe completion
+ * @returns True if the gesture qualifies as a valid swipe
  */
 export function validateGesture(
 	distance: number,
@@ -35,11 +39,11 @@ export function validateGesture(
 	threshold: number,
 	velocityThreshold: number,
 ): boolean {
-	return Math.abs(distance) >= threshold || velocity >= velocityThreshold;
+	return Math.abs(distance) >= threshold && velocity >= velocityThreshold;
 }
 
 /**
- * Determines swipe direction based on horizontal movement
+ * Determines the swipe direction based on horizontal movement.
  *
  * @param deltaX - Change in X coordinate (positive = right, negative = left)
  * @returns SwipeDirection or null if no clear direction
@@ -51,40 +55,8 @@ export function getSwipeDirection(deltaX: number): SwipeDirection | null {
 }
 
 /**
- * Normalizes touch and mouse event coordinates to a consistent format
- *
- * @param event - Touch or mouse event
- * @returns Object with x and y coordinates
+ * CSS selector string for all interactive elements that should not
+ * trigger swipe detection when touched/clicked.
  */
-export function normalizeEventCoordinates(event: TouchEvent | MouseEvent): {
-	x: number;
-	y: number;
-} {
-	if ("touches" in event) {
-		// Touch event - use first touch point
-		const touch = event.touches[0] || event.changedTouches[0];
-		return { x: touch.clientX, y: touch.clientY };
-	} else {
-		// Mouse event
-		return { x: event.clientX, y: event.clientY };
-	}
-}
-
-/**
- * Checks if vertical movement exceeds the allowed tolerance
- *
- * @param deltaY - Change in Y coordinate
- * @param delta - Maximum allowed initial vertical movement
- * @param deltaX - Change in X coordinate (used to scale tolerance for diagonal swipes)
- * @returns True if vertical movement is within tolerance
- */
-export function isWithinVerticalTolerance(
-	deltaY: number,
-	delta: number,
-	deltaX: number = 0,
-): boolean {
-	// Allow the vertical tolerance to scale with horizontal movement (incline support)
-	// while keeping a strict threshold for initial vertical scrolling.
-	// A factor of 0.70 allows an incline angle of up to ~35 degrees, which feels very natural.
-	return Math.abs(deltaY) <= Math.max(delta, Math.abs(deltaX) * 0.7);
-}
+export const INTERACTIVE_SELECTOR =
+	"input, textarea, select, button, a, [contenteditable]";
