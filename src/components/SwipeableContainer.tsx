@@ -19,7 +19,7 @@
 
 import React, { forwardRef, JSX, useState, useEffect, useRef } from 'react';
 import { useHorizontalSwipe } from '../hooks/useHorizontalSwipe';
-import { SwipeConfig, SwipeHandlers, SwipeAnimationConfig } from '../types/swipe';
+import { SwipeConfig, SwipeHandlers, SwipeAnimationConfig, SwipeEvent } from '../types/swipe';
 
 /**
  * Props for the SwipeableContainer component.
@@ -71,9 +71,10 @@ export const SwipeableContainer = forwardRef<HTMLElement, SwipeableContainerProp
       onSwiping,
       threshold,
       velocityThreshold,
+      lockThreshold,
       delta,
-      preventScrollOnSwipe,
       trackMouse,
+      preventScrollOnSwipe: _preventScrollOnSwipe,
       animated = false,
       animationType = 'slide',
       animationDuration = 300,
@@ -104,8 +105,8 @@ export const SwipeableContainer = forwardRef<HTMLElement, SwipeableContainerProp
     }, [children]);
 
     // Handle swipe with animation
-    const handleSwipeLeft = (event: { direction: string; distance: number; velocity: number; duration: number }) => {
-      onSwipeLeft?.(event as never);
+    const handleSwipeLeft = (event: SwipeEvent) => {
+      onSwipeLeft?.(event);
       if (animated) {
         setAnimationState({ isAnimating: true, direction: 'left' });
         animationTimerRef.current = setTimeout(() => {
@@ -114,8 +115,8 @@ export const SwipeableContainer = forwardRef<HTMLElement, SwipeableContainerProp
       }
     };
 
-    const handleSwipeRight = (event: { direction: string; distance: number; velocity: number; duration: number }) => {
-      onSwipeRight?.(event as never);
+    const handleSwipeRight = (event: SwipeEvent) => {
+      onSwipeRight?.(event);
       if (animated) {
         setAnimationState({ isAnimating: true, direction: 'right' });
         animationTimerRef.current = setTimeout(() => {
@@ -187,8 +188,8 @@ export const SwipeableContainer = forwardRef<HTMLElement, SwipeableContainerProp
     const swipeRef = useHorizontalSwipe(swipeHandlersWithAnimation, {
       threshold,
       velocityThreshold,
+      lockThreshold,
       delta,
-      preventScrollOnSwipe,
       trackMouse
     });
 
