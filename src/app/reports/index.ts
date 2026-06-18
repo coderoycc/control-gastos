@@ -8,3 +8,5 @@ export { DateFilterModal } from './components/DateFilterModal';
 export { AccountMenuModal } from './components/AccountMenuModal';
 export { ChartView } from './components/ChartView';
 export { useReportCharts } from './hooks/useReportCharts';
+export { ReportsLayout } from './components/ReportsLayout';
+export { useReportsDate } from './context/useReportsDate';

@@ -81,7 +81,7 @@ export function ReportsMenu({
 
         <div className="space-y-3">
           <Link
-            to={`/reports/by-account?month=${format(currentDate, 'yyyy-MM')}`}
+            to="/reports/by-account"
             className="block p-5 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 transition-all"
           >
             <div className="flex items-center gap-4">
@@ -98,7 +98,7 @@ export function ReportsMenu({
           </Link>
 
           <Link
-            to={`/reports/charts?month=${format(currentDate, 'yyyy-MM')}`}
+            to="/reports/charts"
             className="block p-5 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all"
           >
             <div className="flex items-center gap-4">

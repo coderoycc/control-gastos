@@ -11,43 +11,46 @@ interface TransactionCardProps {
 export function TransactionCard({ transaction }: TransactionCardProps) {
   const { accounts, labels } = useData();
   const account = accounts.find(a => a.id === transaction.accountId);
-  const transactionLabels = labels.filter(l => transaction.labels.includes(l.id));
+  const toAccount = accounts.find(a => a.id === transaction.toAccountId);
+  const label = labels.find(l => transaction.labels.includes(l.id));
 
   return (
     <Link
-      key={transaction.id}
       to={`/edit/${transaction.id}`}
-      className={`block p-4 rounded-lg border-l-4 ${getTransactionColor(transaction.type)} hover:shadow-md transition-shadow`}
+      className={`block px-3 py-2.5 rounded-lg border-l-4 ${getTransactionColor(transaction.type)} hover:shadow-md transition-shadow`}
     >
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-3 flex-1">
-          {getTransactionIcon(transaction.type)}
-          <div className="flex-1 min-w-0">
-            <p className="font-medium truncate">{transaction.detail}</p>
-            <div className="flex flex-wrap gap-1 mt-1.5">
-              {transactionLabels.map(label => (
-                <span
-                  key={label.id}
-                  className="inline-block px-2 py-0.5 rounded text-xs font-medium text-white"
-                  style={{ backgroundColor: label.color }}
-                >
-                  {label.name}
-                </span>
-              ))}
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {account?.name}
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-              {formatTransactionDate(transaction.date)}
-            </p>
-          </div>
+      {/* Línea 1: Icono + Descripción + Etiqueta + Monto */}
+      <div className="flex items-center overflow-hidden">
+        {getTransactionIcon(transaction.type)}
+        <div className="flex items-center gap-1 flex-1 min-w-0 ml-2">
+          <p className="truncate text-sm font-medium leading-tight">{transaction.detail}</p>
+          {label && (
+            <span
+              className="flex-shrink-0 overflow-hidden whitespace-nowrap max-w-[70px] label-tag text-[9px] px-1 py-px rounded font-medium text-white"
+              style={{ backgroundColor: label.color }}
+            >
+              {label.name}
+            </span>
+          )}
         </div>
-        <div className="text-right ml-2">
-          <p className={`font-semibold ${getAmountColor(transaction.type)}`}>
-            {transaction.type === 'salida' ? '-' : ''}${transaction.amount.toLocaleString()}
-          </p>
-        </div>
+        <p className={`flex-shrink-0 font-semibold text-sm ml-2 ${getAmountColor(transaction.type)}`}>
+          {transaction.type === 'salida' ? '-' : ''}${transaction.amount.toLocaleString()}
+        </p>
+      </div>
+
+      {/* Línea 2: Cuenta/Transfer + Fecha */}
+      <div className="flex items-center gap-2 ml-7 text-gray-500 dark:text-gray-400">
+        {transaction.type === 'transferencia' ? (
+          <span className="truncate text-[11px]">
+            {account?.name || 'Origen'}
+            {' → '}
+            {toAccount?.name || 'Destino'}
+          </span>
+        ) : (
+          <span className="truncate text-[11px]">{account?.name}</span>
+        )}
+        <span>·</span>
+        <span className="whitespace-nowrap text-xs leading-tight">{formatTransactionDate(transaction.date)}</span>
       </div>
     </Link>
   );

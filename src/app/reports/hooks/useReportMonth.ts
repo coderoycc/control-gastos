@@ -1,23 +1,20 @@
-import { useState, useMemo } from 'react';
-import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, addMonths, subMonths } from 'date-fns';
+import { useMemo, useEffect } from 'react';
+import { parseISO, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { useData } from '../../context';
 import { useHorizontalSwipe } from '../../../hooks/useHorizontalSwipe';
+import { useReportsDate } from '../context';
 
 export function useReportMonth() {
   const { transactions } = useData();
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const { currentDate, goToPreviousMonth, goToNextMonth, resetToMonthView } = useReportsDate();
 
-  const handlePreviousMonth = () => {
-    setCurrentDate(prev => subMonths(prev, 1));
-  };
-
-  const handleNextMonth = () => {
-    setCurrentDate(prev => addMonths(prev, 1));
-  };
+  useEffect(() => {
+    resetToMonthView();
+  }, [resetToMonthView]);
 
   const swipeHandlers = {
-    onSwipeLeft: handleNextMonth,
-    onSwipeRight: handlePreviousMonth,
+    onSwipeLeft: goToNextMonth,
+    onSwipeRight: goToPreviousMonth,
   };
   const containerRef = useHorizontalSwipe(swipeHandlers, {
     threshold: 50,
@@ -58,7 +55,7 @@ export function useReportMonth() {
     monthTransactions,
     totals,
     balance,
-    handlePreviousMonth,
-    handleNextMonth,
+    handlePreviousMonth: goToPreviousMonth,
+    handleNextMonth: goToNextMonth,
   };
 }
