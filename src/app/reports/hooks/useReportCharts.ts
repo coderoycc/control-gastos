@@ -1,44 +1,39 @@
-import { useState, useMemo, useCallback } from 'react';
-import { useSearchParams } from 'react-router';
-import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, eachDayOfInterval, addMonths, subMonths } from 'date-fns';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, eachDayOfInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useData } from '../../context';
 import { useHorizontalSwipe } from '../../../hooks/useHorizontalSwipe';
+import { useReportsDate } from '../context';
 import type { ChartType, GroupDimension, FilterType, CategoryChartItem, DateChartItem } from '../utils/chartUtils';
 import { CHART_COLORS } from '../utils/chartUtils';
 
 export function useReportCharts() {
-  const [searchParams, setSearchParams] = useSearchParams();
   const { transactions, accounts, labels } = useData();
+  const {
+    currentDate,
+    goToPreviousMonth,
+    goToNextMonth,
+    resetToMonthView,
+  } = useReportsDate();
 
   const [chartType, setChartType] = useState<ChartType>('pie');
   const [dimension, setDimension] = useState<GroupDimension>('tags');
   const [filterType, setFilterType] = useState<FilterType>('salida');
-  const monthParam = searchParams.get('month');
 
-  const currentDate = useMemo(() => {
-    const now = new Date();
-    if (monthParam) {
-      const [yearStr, monthStr] = monthParam.split('-');
-      const year = parseInt(yearStr, 10);
-      const month = parseInt(monthStr, 10) - 1;
-      return new Date(year, month, 1);
-    }
-    return new Date(now.getFullYear(), now.getMonth(), 1);
-  }, [monthParam]);
+  useEffect(() => {
+    resetToMonthView();
+  }, [resetToMonthView]);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
 
   const handlePreviousMonth = useCallback(() => {
-    const prevMonth = subMonths(currentDate, 1);
-    setSearchParams({ month: format(prevMonth, 'yyyy-MM') });
-  }, [currentDate, setSearchParams]);
+    goToPreviousMonth();
+  }, [goToPreviousMonth]);
 
   const handleNextMonth = useCallback(() => {
-    const nextMonth = addMonths(currentDate, 1);
-    setSearchParams({ month: format(nextMonth, 'yyyy-MM') });
-  }, [currentDate, setSearchParams]);
+    goToNextMonth();
+  }, [goToNextMonth]);
 
   const swipeHandlers = useMemo(
     () => ({
@@ -204,21 +199,17 @@ export function useReportCharts() {
   }, [categoryData, dateData, dimension]);
 
   return {
-    // Refs
     headerRef,
     summaryRef,
     chartRef,
-    // State
     currentDate,
     chartType,
     dimension,
     filterType,
-    // Derived
     totals,
     categoryData,
     dateData,
     hasData,
-    // Actions
     setChartType,
     setFilterType,
     handleDimensionChange,

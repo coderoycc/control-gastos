@@ -1,5 +1,6 @@
 import { createHashRouter } from "react-router";
 import { Layout } from "./components/Layout";
+import { ReportsLayout } from "./app/reports/components/ReportsLayout";
 import { TransactionsList } from "./pages/TransactionsList";
 import { AddTransaction } from "./pages/AddTransaction";
 import { EditTransaction } from "./pages/EditTransaction";
@@ -14,9 +15,15 @@ export const router = createHashRouter([
     Component: Layout,
     children: [
       { index: true, Component: TransactionsList },
-      { path: "reports", Component: Reports },
-      { path: "reports/by-account", Component: ReportByAccount },
-      { path: "reports/charts", Component: ReportCharts },
+      {
+        path: "reports",
+        Component: ReportsLayout,
+        children: [
+          { index: true, Component: Reports },
+          { path: "by-account", Component: ReportByAccount },
+          { path: "charts", Component: ReportCharts },
+        ],
+      },
       { path: "add", Component: AddTransaction },
       { path: "edit/:id", Component: EditTransaction },
       { path: "accounts", Component: ConfigurationsManager },

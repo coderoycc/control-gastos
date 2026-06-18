@@ -123,7 +123,7 @@ export function TransactionsList() {
             </p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-1">
             {filteredTransactions.map(transaction => (
               <TransactionCard key={transaction.id} transaction={transaction} />
             ))}
