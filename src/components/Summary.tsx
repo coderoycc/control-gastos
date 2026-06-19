@@ -8,27 +8,25 @@ export function Summary({ income, expense, advanced = false }: SummaryProps) {
   const balance = income - expense;
 
   return (
-    <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
-      <div className="flex items-center justify-around text-center">
-        <div className="flex-1">
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{advanced ? 'Ingresos' : 'Entradas'}</p>
+    <div className="px-3 py-1">
+      <div className="flex gap-2">
+        <div className="flex-1 rounded-xl border-l-4 border-green-500 bg-white dark:bg-transparent p-1.5 shadow-xs dark:shadow-gray-500/50">
+          <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">{advanced ? 'Ingresos' : 'Entradas'}</p>
           <p className="text-lg font-bold text-green-600 dark:text-green-400">
             ${income.toLocaleString()}
           </p>
         </div>
-        <div className="w-px h-8 bg-gray-300 dark:bg-gray-700" />
-        <div className="flex-1">
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{advanced ? 'Egresos' : 'Gastos'}</p>
+        <div className="flex-1 rounded-xl border-l-4 border-red-500 bg-white dark:bg-transparent p-1.5 shadow-xs dark:shadow-gray-500/50">
+          <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">{advanced ? 'Egresos' : 'Gastos'}</p>
           <p className="text-lg font-bold text-red-600 dark:text-red-400">
             ${expense.toLocaleString()}
           </p>
         </div>
-        <div className="w-px h-8 bg-gray-300 dark:bg-gray-700" />
-        <div className="flex-1">
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Balance</p>
+        <div className="flex-1 rounded-xl border-l-4 border-blue-500 bg-white dark:bg-transparent p-1.5 shadow-xs dark:shadow-gray-500/50">
+          <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">Balance</p>
           <p className={`text-lg font-bold ${
-            balance >= 0 
-              ? 'text-green-600 dark:text-green-400' 
+            balance >= 0
+              ? 'text-green-600 dark:text-green-400'
               : 'text-red-600 dark:text-red-400'
           }`}>
             ${balance.toLocaleString()}
