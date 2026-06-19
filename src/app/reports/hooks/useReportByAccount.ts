@@ -22,6 +22,7 @@ export function useReportByAccount() {
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [allTransactions, setAllTransactions] = useState(false);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const [dateRange, setDateRange] = useState({
     start: globalDateRange?.start ?? format(monthStart, 'yyyy-MM-dd'),
@@ -88,8 +89,11 @@ export function useReportByAccount() {
           end: filterEnd,
         });
       })
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [transactions, currentAccount, dateRange, allTransactions]);
+      .sort((a, b) => {
+        const diff = new Date(b.date).getTime() - new Date(a.date).getTime();
+        return sortOrder === 'desc' ? diff : -diff;
+      });
+  }, [transactions, currentAccount, dateRange, allTransactions, sortOrder]);
 
   const totals = useMemo(() => {
     if (currentAccount.id === 'all') {
@@ -151,6 +155,10 @@ export function useReportByAccount() {
     setDateError('');
   }, []);
 
+  const handleSortOrderChange = useCallback((order: 'asc' | 'desc') => {
+    setSortOrder(order);
+  }, []);
+
   const handleDateChange = useCallback(
     (field: 'start' | 'end', value: string) => {
       setDateError(value && !isValidDate(value) ? 'Fecha inválida' : '');
@@ -191,6 +199,8 @@ export function useReportByAccount() {
     setDateError,
     handleAccountChange,
     handleToggleAll,
+    sortOrder,
+    handleSortOrderChange,
     handleDateChange,
     applyDateFilter,
     handlePreviousMonth,
