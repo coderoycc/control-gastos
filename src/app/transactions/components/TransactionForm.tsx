@@ -4,6 +4,7 @@ import { getBackgroundColor } from '../utils/transactionStyles';
 import { useSpendingLimitAlert } from '../hooks/useSpendingLimitAlert';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../../../components/ui/tooltip';
 import { useHorizontalSwipe } from '../../../hooks/useHorizontalSwipe';
+import { TagLabel } from '../../../components';
 
 export function TransactionForm() {
   const {
@@ -299,22 +300,14 @@ export function TransactionForm() {
                 {filteredLabels.map(label => {
                   const isSelected = selectedLabels.includes(label.id);
                   return (
-                    <button
+                    <TagLabel
                       key={label.id}
-                      type="button"
+                      name={label.name}
+                      color={label.color}
+                      size="md"
+                      selected={isSelected}
                       onClick={() => toggleLabel(label.id)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border-2 ${
-                        isSelected
-                          ? 'border-gray-900 dark:border-white scale-105 shadow-md'
-                          : 'border-transparent opacity-50 hover:opacity-75'
-                      }`}
-                      style={{
-                        backgroundColor: isSelected ? label.color : `${label.color}40`,
-                        color: isSelected ? 'white' : label.color,
-                      }}
-                    >
-                      {label.name}
-                    </button>
+                    />
                   );
                 })}
               </div>
