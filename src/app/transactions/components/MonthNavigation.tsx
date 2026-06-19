@@ -16,7 +16,7 @@ export function MonthNavigation({
   filterDateText,
 }: MonthNavigationProps) {
   return (
-    <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
+    <div className="px-4 pt-2 pb-1 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
       <div className="flex items-center justify-between max-w-md mx-auto">
         <button
           onClick={onPreviousMonth}
@@ -47,7 +47,7 @@ export function MonthNavigation({
         </button>
       </div>
 
-      <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-1">
+      <p className="text-center text-xs text-gray-500 dark:text-gray-400">
         {formatYear(currentDate)}
       </p>
 

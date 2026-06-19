@@ -1,4 +1,5 @@
 import { BottomSheet } from '../../../components';
+import { ToggleGroup, ToggleGroupItem } from '../../../components/ui/toggle-group';
 
 interface ReportFiltersProps {
   isOpen: boolean;
@@ -11,6 +12,8 @@ interface ReportFiltersProps {
   onToggleAll: (checked: boolean) => void;
   dateError: string;
   onApply: () => void;
+  sortOrder: 'asc' | 'desc';
+  onSortOrderChange: (order: 'asc' | 'desc') => void;
 }
 
 export function ReportFilters({
@@ -24,6 +27,8 @@ export function ReportFilters({
   onToggleAll,
   dateError,
   onApply,
+  sortOrder,
+  onSortOrderChange,
 }: ReportFiltersProps) {
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title="Filtros de fecha">
@@ -72,6 +77,27 @@ export function ReportFilters({
             </div>
           </div>
         )}
+
+        <ToggleGroup
+          type="single"
+          value={sortOrder}
+          onValueChange={value => value && onSortOrderChange(value as 'asc' | 'desc')}
+          variant="outline"
+          className="w-full"
+        >
+          <ToggleGroupItem
+            value="desc"
+            className="flex-1 text-sm data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+          >
+            Más recientes
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value="asc"
+            className="flex-1 text-sm data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+          >
+            Más antiguos
+          </ToggleGroupItem>
+        </ToggleGroup>
 
         {dateError && (
           <p className="text-xs text-red-600 dark:text-red-400 text-center">

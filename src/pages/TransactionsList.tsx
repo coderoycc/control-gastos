@@ -1,12 +1,11 @@
 import { useCallback } from 'react';
 import { Link } from 'react-router';
 import { Filter, Plus } from 'lucide-react';
-import { SwipeableContainer } from '../components';
+import { SwipeableContainer, Summary } from '../components';
 import {
   useMonthNavigation,
   useTransactionFilters,
   MonthNavigation,
-  TransactionSummary,
   TransactionCard,
   TransactionFilters,
 } from '../app/transactions';
@@ -22,7 +21,6 @@ export function TransactionsList() {
   const {
     filteredTransactions,
     summary,
-    balance,
     selectedAccount,
     startDate,
     endDate,
@@ -64,24 +62,25 @@ export function TransactionsList() {
         filterDateText={filterDateText}
       />
 
-      <TransactionSummary
+      <Summary
         income={summary.income}
         expense={summary.expense}
-        balance={balance}
+        advanced
       />
-
-      <div className="fixed bottom-20 right-4 z-50 flex flex-col gap-1.5">
+      <div className="px-4 pt-2 pb-0 flex items-center justify-between text-gray-500 dark:text-gray-400 text-xs">
+        <span>Últimas transacciones</span>
         <button
           onClick={() => setShowFilters(true)}
-          className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-700 dark:bg-gray-600 text-white shadow-lg hover:bg-gray-800 dark:hover:bg-gray-700 transition-all hover:scale-110 active:scale-95"
-          aria-label="Filtros"
+          className="flex items-center gap-1 text-blue-600 dark:text-blue-400 text-xs cursor-pointer hover:underline"
         >
-          <Filter className="w-4 h-4" />
+          <Filter className="w-3.5 h-3.5" />
+          Filtrar
         </button>
-
+      </div>
+      <div className="fixed bottom-20 right-4 z-50 flex flex-col">
         <Link
           to="/add"
-          className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-600 dark:bg-blue-500 text-white shadow-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-all hover:scale-110 active:scale-95"
+          className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 dark:bg-blue-500 text-white shadow-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-all hover:scale-110 active:scale-95"
           aria-label="Agregar transacción"
         >
           <Plus className="w-4 h-4" />
