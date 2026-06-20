@@ -13,7 +13,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
   const { accounts, labels } = useData();
   const account = accounts.find(a => a.id === transaction.accountId);
   const toAccount = accounts.find(a => a.id === transaction.toAccountId);
-  const label = labels.find(l => transaction.labels.includes(l.id));
+  const label = labels.find(l => transaction.labels?.includes(l.id));
 
   return (
     <Link

@@ -11,10 +11,12 @@ export interface TransactionFiltersResult {
   startDate: string;
   endDate: string;
   showFilters: boolean;
+  sortOrder: 'asc' | 'desc';
   setSelectedAccount: (account: string) => void;
   setStartDate: (date: string) => void;
   setEndDate: (date: string) => void;
   setShowFilters: (show: boolean) => void;
+  setSortOrder: (order: 'asc' | 'desc') => void;
   clearFilters: () => void;
   clearDateRange: () => void;
   filterDateText: string | null;
@@ -27,6 +29,7 @@ export function useTransactionFilters(currentDate: Date): TransactionFiltersResu
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const filteredTransactions = useMemo(() => {
     let filtered = [...transactions];
@@ -53,10 +56,12 @@ export function useTransactionFilters(currentDate: Date): TransactionFiltersResu
       });
     }
 
-    return filtered.sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
-  }, [transactions, selectedAccount, currentDate, startDate, endDate]);
+    return filtered.sort((a, b) => {
+      const timeA = new Date(a.date).getTime();
+      const timeB = new Date(b.date).getTime();
+      return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
+    });
+  }, [transactions, selectedAccount, currentDate, startDate, endDate, sortOrder]);
 
   const summary = useMemo(() => {
     return filteredTransactions.reduce(
@@ -78,6 +83,7 @@ export function useTransactionFilters(currentDate: Date): TransactionFiltersResu
     setSelectedAccount('all');
     setStartDate('');
     setEndDate('');
+    setSortOrder('desc');
   }, []);
 
   const clearDateRange = useCallback(() => {
@@ -97,10 +103,12 @@ export function useTransactionFilters(currentDate: Date): TransactionFiltersResu
     startDate,
     endDate,
     showFilters,
+    sortOrder,
     setSelectedAccount,
     setStartDate,
     setEndDate,
     setShowFilters,
+    setSortOrder,
     clearFilters,
     clearDateRange,
     filterDateText,

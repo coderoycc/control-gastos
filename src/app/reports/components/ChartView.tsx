@@ -263,7 +263,10 @@ export function ChartView() {
           </div>
 
           {/* RENDERIZADO DEL GRÁFICO */}
-          <div className="h-64 sm:h-80 w-full flex items-center justify-center">
+          <div
+            className="h-64 sm:h-80 w-full flex items-center justify-center"
+            style={{ touchAction: 'none' }}
+          >
             {!hasData ? (
               <div className="flex flex-col items-center justify-center text-center p-6 text-gray-500 dark:text-gray-400">
                 <AlertCircle className="w-10 h-10 text-gray-400 dark:text-gray-600 mb-2.5 animate-pulse" />
@@ -297,6 +300,7 @@ export function ChartView() {
                       ))}
                     </Pie>
                     <Tooltip
+                      trigger="click"
                       formatter={(value: number) => [formatCurrency(value), 'Monto']}
                       contentStyle={{
                         backgroundColor: 'rgba(31, 41, 55, 0.95)',
@@ -313,6 +317,7 @@ export function ChartView() {
                       <XAxis dataKey="name" fontSize={10} tickLine={false} />
                       <YAxis fontSize={10} tickLine={false} />
                       <Tooltip
+                        trigger="click"
                         labelFormatter={(label, items) => {
                           if (items && items[0]) {
                             return items[0].payload.fullDate;
@@ -337,6 +342,7 @@ export function ChartView() {
                       <XAxis dataKey="name" fontSize={10} tickLine={false} />
                       <YAxis fontSize={10} tickLine={false} />
                       <Tooltip
+                        trigger="click"
                         formatter={(value: number) => [formatCurrency(value), 'Monto']}
                         contentStyle={{
                           backgroundColor: 'rgba(31, 41, 55, 0.95)',
@@ -361,6 +367,7 @@ export function ChartView() {
                     <XAxis dataKey="name" fontSize={10} tickLine={false} />
                     <YAxis fontSize={10} tickLine={false} />
                     <Tooltip
+                      trigger="click"
                       labelFormatter={(label, items) => {
                         if (items && items[0]) {
                           return items[0].payload.fullDate;
@@ -385,6 +392,7 @@ export function ChartView() {
                     <XAxis dataKey="name" fontSize={10} tickLine={false} />
                     <YAxis fontSize={10} tickLine={false} />
                     <Tooltip
+                      trigger="click"
                       formatter={(value: number) => [formatCurrency(value), 'Monto']}
                       contentStyle={{
                         backgroundColor: 'rgba(31, 41, 55, 0.95)',

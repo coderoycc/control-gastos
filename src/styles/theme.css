@@ -179,3 +179,27 @@
     line-height: 1.5;
   }
 }
+
+/* ============================================================
+   Recharts — Mobile Touch Improvements
+   Elimina el enmarcado visual (outline) que aparece al
+   tocar gráficos en dispositivos móviles, y quita el
+   highlight azul del tap highlight de WebKit/Blink.
+   ============================================================ */
+.recharts-wrapper,
+.recharts-wrapper:focus,
+.recharts-surface,
+.recharts-surface:focus {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.recharts-wrapper svg,
+.recharts-wrapper svg:focus {
+  outline: none !important;
+}
+
+/* El tooltip no debe interferir con los eventos touch */
+.recharts-tooltip-wrapper {
+  pointer-events: none;
+}
