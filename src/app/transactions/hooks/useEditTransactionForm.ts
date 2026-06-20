@@ -36,7 +36,7 @@ export function useEditTransactionForm() {
         setAmount(transaction.amount.toString());
         setAccountId(transaction.accountId);
         setToAccountId((transaction as any).toAccountId || '');
-        setSelectedLabels(transaction.labels);
+        setSelectedLabels(transaction.labels || []);
         } else {
         navigate(-1);
       }
@@ -117,8 +117,8 @@ export function useEditTransactionForm() {
         });
         transferBetweenAccounts(accountId, toAccountId, transferAmount);
       } else {
-        if (!detail || !amount || !accountId || selectedLabels.length === 0 || !id) {
-          alert('Por favor completa todos los campos y selecciona una etiqueta');
+        if (!detail || !amount || !accountId || !id) {
+          alert('Por favor completa todos los campos');
           return;
         }
         updateTransaction(id, {

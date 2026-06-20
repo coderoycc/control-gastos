@@ -31,6 +31,8 @@ export function TransactionsList() {
     setShowFilters,
     clearFilters,
     filterDateText,
+    sortOrder,
+    setSortOrder,
   } = useTransactionFilters(currentDate);
 
   const handlePreviousMonth = useCallback(() => {
@@ -51,7 +53,7 @@ export function TransactionsList() {
     }
   }, [startDate, endDate, clearFilters, resetToCurrentMonth, goToNextMonth]);
 
-  const hasActiveFilters = selectedAccount !== 'all' || !!startDate || !!endDate;
+  const hasActiveFilters = selectedAccount !== 'all' || !!startDate || !!endDate || sortOrder !== 'desc';
 
   return (
     <div className="flex flex-col h-full">
@@ -98,6 +100,8 @@ export function TransactionsList() {
         onEndDateChange={setEndDate}
         hasActiveFilters={hasActiveFilters}
         onClearFilters={clearFilters}
+        sortOrder={sortOrder}
+        onSortOrderChange={setSortOrder}
       />
 
       <SwipeableContainer

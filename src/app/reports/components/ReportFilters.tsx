@@ -1,5 +1,5 @@
 import { BottomSheet } from '../../../components';
-import { ToggleGroup, ToggleGroupItem } from '../../../components/ui/toggle-group';
+import { Switch } from '../../../components/ui/switch';
 
 interface ReportFiltersProps {
   isOpen: boolean;
@@ -78,26 +78,20 @@ export function ReportFilters({
           </div>
         )}
 
-        <ToggleGroup
-          type="single"
-          value={sortOrder}
-          onValueChange={value => value && onSortOrderChange(value as 'asc' | 'desc')}
-          variant="outline"
-          className="w-full"
-        >
-          <ToggleGroupItem
-            value="desc"
-            className="flex-1 text-sm data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-          >
-            Más recientes
-          </ToggleGroupItem>
-          <ToggleGroupItem
-            value="asc"
-            className="flex-1 text-sm data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-          >
-            Más antiguos
-          </ToggleGroupItem>
-        </ToggleGroup>
+        <div className="flex items-center justify-between p-3.5 rounded-xl border border-gray-100 dark:border-gray-800/80 bg-gray-50/50 dark:bg-gray-900/20">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-sm font-medium text-gray-850 dark:text-gray-200">
+              Ordenar por fecha
+            </span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              {sortOrder === 'desc' ? 'Más recientes primero' : 'Más antiguos primero'}
+            </span>
+          </div>
+          <Switch
+            checked={sortOrder === 'desc'}
+            onCheckedChange={(checked) => onSortOrderChange(checked ? 'desc' : 'asc')}
+          />
+        </div>
 
         {dateError && (
           <p className="text-xs text-red-600 dark:text-red-400 text-center">

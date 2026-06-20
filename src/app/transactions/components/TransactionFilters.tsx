@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { BottomSheet } from '../../../components';
 import { useData } from '../../context/hooks/useData';
+import { Switch } from '../../../components/ui/switch';
 
 interface TransactionFiltersProps {
   isOpen: boolean;
@@ -13,6 +14,8 @@ interface TransactionFiltersProps {
   onEndDateChange: (date: string) => void;
   hasActiveFilters: boolean;
   onClearFilters: () => void;
+  sortOrder: 'asc' | 'desc';
+  onSortOrderChange: (order: 'asc' | 'desc') => void;
 }
 
 export function TransactionFilters({
@@ -26,6 +29,8 @@ export function TransactionFilters({
   onEndDateChange,
   hasActiveFilters,
   onClearFilters,
+  sortOrder,
+  onSortOrderChange,
 }: TransactionFiltersProps) {
   const { accounts } = useData();
 
@@ -73,6 +78,21 @@ export function TransactionFilters({
               className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
             />
           </div>
+        </div>
+
+        <div className="flex items-center justify-between p-3.5 rounded-xl border border-gray-100 dark:border-gray-800/80 bg-gray-50/50 dark:bg-gray-900/20">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-sm font-medium text-gray-850 dark:text-gray-200">
+              Ordenar por fecha
+            </span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              {sortOrder === 'desc' ? 'Más recientes primero' : 'Más antiguos primero'}
+            </span>
+          </div>
+          <Switch
+            checked={sortOrder === 'desc'}
+            onCheckedChange={(checked) => onSortOrderChange(checked ? 'desc' : 'asc')}
+          />
         </div>
 
         {hasActiveFilters && (

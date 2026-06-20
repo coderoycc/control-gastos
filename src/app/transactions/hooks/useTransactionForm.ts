@@ -83,8 +83,8 @@ export function useTransactionForm() {
         });
         transferBetweenAccounts(accountId, toAccountId, transferAmount);
       } else {
-        if (!detail || !amount || !accountId || selectedLabels.length === 0) {
-          alert('Por favor completa todos los campos y selecciona una etiqueta');
+        if (!detail || !amount || !accountId) {
+          alert('Por favor completa todos los campos');
           return;
         }
         addTransaction({
