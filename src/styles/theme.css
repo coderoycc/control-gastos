@@ -210,7 +210,7 @@
    Soporta modo claro y oscuro.
    ============================================================ */
 .rdp-custom {
-  --rdp-cell-size: 40px;
+  --rdp-cell-size: 36px;
   --rdp-accent-color: #2563eb;
   --rdp-background-color: #dbeafe;
   --rdp-accent-color-dark: #3b82f6;
@@ -254,6 +254,16 @@
   justify-content: space-between;
   padding: 0 4px 8px 4px;
   gap: 4px;
+  position: relative;
+}
+
+/* Contenedor de botones de navegación */
+.rdp-custom .rdp-nav {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex-shrink: 0 !important;
 }
 
 .rdp-custom .rdp-caption_label {
@@ -276,6 +286,7 @@
   font-weight: 500;
   color: inherit;
   cursor: pointer;
+  min-height: 32px;
 }
 
 .dark .rdp-custom .rdp-dropdown {
@@ -367,5 +378,56 @@
 /* Días fuera del mes */
 .rdp-custom .rdp-day_outside {
   opacity: 0.35;
+}
+
+/* --------------------------------------------------
+   Pantallas angostas (phones pequeños)
+   -------------------------------------------------- */
+@media (max-width: 380px) {
+  .rdp-custom {
+    --rdp-cell-size: 34px;
+    padding: 8px;
+    font-size: 0.75rem;
+  }
+
+  .rdp-custom .rdp-caption {
+    padding: 0 4px 6px 4px;
+    gap: 2px;
+  }
+
+  .rdp-custom .rdp-caption_dropdowns {
+    gap: 2px;
+  }
+
+  .rdp-custom .rdp-dropdown {
+    padding: 2px 4px;
+    font-size: 0.75rem;
+    min-height: 28px;
+  }
+
+  .rdp-custom .rdp-nav_button {
+    width: 28px;
+    height: 28px;
+  }
+
+  .rdp-custom .rdp-head_cell {
+    font-size: 0.65rem;
+    padding: 2px 0;
+  }
+
+  .rdp-custom .rdp-day {
+    font-size: 0.75rem;
+  }
+}
+
+/* --------------------------------------------------
+   Pantallas pequeñas en altura Y angostas
+   -------------------------------------------------- */
+@media (max-height: 740px) and (max-width: 380px) {
+  .rdp-custom {
+    --rdp-cell-size: 30px;
+    padding: 4px;
+    font-size: 0.7rem;
+  }
 }
 
