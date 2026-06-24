@@ -134,10 +134,11 @@ export function useReportByAccount() {
     return `${format(s, 'd MMM', { locale: es })} – ${format(e, 'd MMM yyyy', { locale: es })}`;
   })();
 
-  const applyDateFilter = useCallback(() => {
-    const s = parseISO(dateRange.start);
-    const e = parseISO(dateRange.end);
-    if (!isValidDate(dateRange.start) || !isValidDate(dateRange.end)) {
+  const applyDateFilter = useCallback((override?: { start: string; end: string }) => {
+    const range = override ?? dateRange;
+    const s = parseISO(range.start);
+    const e = parseISO(range.end);
+    if (!isValidDate(range.start) || !isValidDate(range.end)) {
       setDateError('Fecha inválida');
       return;
     }
@@ -146,7 +147,7 @@ export function useReportByAccount() {
       return;
     }
     setDateError('');
-    setGlobalDateRange({ start: dateRange.start, end: dateRange.end });
+    setGlobalDateRange({ start: range.start, end: range.end });
     setShowFilters(false);
   }, [dateRange, setGlobalDateRange]);
 
