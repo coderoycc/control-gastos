@@ -9,7 +9,14 @@ export function useTransactionForm() {
   const { addTransaction, accounts, labels, transferBetweenAccounts } = useData();
 
   const [type, setType] = useState<TransactionType>('salida');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const getLocalDateString = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const [date, setDate] = useState(getLocalDateString());
   const [detail, setDetail] = useState('');
   const [amount, setAmount] = useState('');
   const [accountId, setAccountId] = useState(accounts[0]?.id || '');

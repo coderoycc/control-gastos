@@ -203,3 +203,169 @@
 .recharts-tooltip-wrapper {
   pointer-events: none;
 }
+
+/* ============================================================
+   react-day-picker — Estilos personalizados
+   Integra el calendario con el diseño del proyecto.
+   Soporta modo claro y oscuro.
+   ============================================================ */
+.rdp-custom {
+  --rdp-cell-size: 40px;
+  --rdp-accent-color: #2563eb;
+  --rdp-background-color: #dbeafe;
+  --rdp-accent-color-dark: #3b82f6;
+  --rdp-background-color-dark: #1e3a5f;
+  --rdp-outline: 2px solid var(--rdp-accent-color);
+  margin: 0;
+  padding: 12px;
+  font-size: 0.875rem;
+  width: 100%;
+}
+
+@media (max-height: 740px) {
+  .rdp-custom {
+    --rdp-cell-size: 32px;
+    padding: 6px;
+    font-size: 0.8rem;
+  }
+}
+
+/* Centra la tabla del calendario */
+.rdp-custom .rdp-months {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.rdp-custom .rdp-month {
+  width: 100%;
+}
+
+.rdp-custom .rdp-table {
+  width: 100%;
+  max-width: 100%;
+  border-collapse: collapse;
+}
+
+/* Cabecera con el mes/año */
+.rdp-custom .rdp-caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px 8px 4px;
+  gap: 4px;
+}
+
+.rdp-custom .rdp-caption_label {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+/* Dropdowns de mes/año */
+.rdp-custom .rdp-caption_dropdowns {
+  display: flex;
+  gap: 4px;
+}
+
+.rdp-custom .rdp-dropdown {
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: inherit;
+  cursor: pointer;
+}
+
+.dark .rdp-custom .rdp-dropdown {
+  border-color: #374151;
+  color: #f9fafb;
+}
+
+/* Botones nav */
+.rdp-custom .rdp-nav_button {
+  border-radius: 8px;
+  padding: 4px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  color: #6b7280;
+}
+
+.rdp-custom .rdp-nav_button:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.dark .rdp-custom .rdp-nav_button {
+  color: #9ca3af;
+}
+
+.dark .rdp-custom .rdp-nav_button:hover {
+  background: #374151;
+  color: #f9fafb;
+}
+
+/* Cabecera de días de la semana */
+.rdp-custom .rdp-head_cell {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9ca3af;
+  padding: 4px 0;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* Celdas de días */
+.rdp-custom .rdp-day {
+  width: var(--rdp-cell-size);
+  height: var(--rdp-cell-size);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  transition: background 0.15s, color 0.15s;
+  color: #1f2937;
+}
+
+.dark .rdp-custom .rdp-day {
+  color: #f9fafb;
+}
+
+.rdp-custom .rdp-day:hover:not(.rdp-day_selected):not(.rdp-day_disabled) {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.dark .rdp-custom .rdp-day:hover:not(.rdp-day_selected):not(.rdp-day_disabled) {
+  background: #374151;
+  color: #f9fafb;
+}
+
+/* Día seleccionado */
+.rdp-custom .rdp-day_selected,
+.rdp-custom .rdp-day_selected:hover {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+/* Día de hoy */
+.rdp-custom .rdp-day_today:not(.rdp-day_selected) {
+  border: 2px solid #2563eb;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.dark .rdp-custom .rdp-day_today:not(.rdp-day_selected) {
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+/* Días fuera del mes */
+.rdp-custom .rdp-day_outside {
+  opacity: 0.35;
+}
+
