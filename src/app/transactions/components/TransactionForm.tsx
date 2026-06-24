@@ -1,4 +1,7 @@
-import { ArrowLeft, Save, AlertTriangle, X } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { ArrowLeft, Save, AlertTriangle, X, CalendarDays } from 'lucide-react';
+import { DayPicker } from 'react-day-picker';
+import 'react-day-picker/dist/style.css';
 import { useTransactionForm, TRANSACTION_TYPES } from '../hooks/useTransactionForm';
 import { getBackgroundColor } from '../utils/transactionStyles';
 import { useSpendingLimitAlert } from '../hooks/useSpendingLimitAlert';
@@ -6,7 +9,37 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../../
 import { useHorizontalSwipe } from '../../../hooks/useHorizontalSwipe';
 import { TagLabel } from '../../../components';
 
+function parseDateString(str: string): Date | undefined {
+  if (!str) return undefined;
+  const [year, month, day] = str.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function formatDateDisplay(str: string): string {
+  if (!str) return '';
+  const d = parseDateString(str);
+  if (!d) return str;
+  return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+}
+
 export function TransactionForm() {
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const calendarRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!calendarOpen) return;
+    const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
+      if (calendarRef.current && !calendarRef.current.contains(e.target as Node)) {
+        setCalendarOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('touchstart', handleOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('touchstart', handleOutsideClick);
+    };
+  }, [calendarOpen]);
   const {
     type,
     date,
@@ -176,17 +209,43 @@ export function TransactionForm() {
           </div>
 
           {/* Date */}
-          <div>
+          <div className="relative" ref={calendarRef}>
             <label className="block text-xs mb-1.5 text-gray-700 dark:text-gray-300">
               Fecha
             </label>
-            <input
-              type="date"
-              value={date}
-              onChange={e => setDate(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
-              required
-            />
+            <button
+              type="button"
+              onClick={() => setCalendarOpen(prev => !prev)}
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-left flex items-center justify-between gap-2 transition-colors hover:border-blue-400 dark:hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400/40"
+            >
+              <span className={date ? 'text-gray-800 dark:text-gray-100' : 'text-gray-400'}>
+                {date ? formatDateDisplay(date) : 'Seleccionar fecha'}
+              </span>
+              <CalendarDays className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+            </button>
+
+            {calendarOpen && (
+              <div className="absolute z-50 mt-1 left-0 right-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden">
+                <DayPicker
+                  mode="single"
+                  selected={parseDateString(date)}
+                  onSelect={(day) => {
+                    if (day) {
+                      const yyyy = day.getFullYear();
+                      const mm = String(day.getMonth() + 1).padStart(2, '0');
+                      const dd = String(day.getDate()).padStart(2, '0');
+                      setDate(`${yyyy}-${mm}-${dd}`);
+                    }
+                    setCalendarOpen(false);
+                  }}
+                  defaultMonth={parseDateString(date)}
+                  captionLayout="dropdown-buttons"
+                  fromYear={2020}
+                  toYear={new Date().getFullYear() + 1}
+                  className="rdp-custom"
+                />
+              </div>
+            )}
           </div>
 
           {/* Detail */}
