@@ -1,7 +1,7 @@
 import { Link } from 'react-router';
 import { format, getDaysInMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { BarChart3, PieChart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BarChart3, PieChart, ArrowLeftRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { FinancialSummary } from '../../../components';
 
 interface ReportsMenuProps {
@@ -109,6 +109,23 @@ export function ReportsMenu({
                 <h4 className="text-lg font-semibold">Reporte Gráfico</h4>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
                   Visualizar con gráficos (tortas, líneas)
+                </p>
+              </div>
+            </div>
+          </Link>
+
+          <Link
+            to="/reports/account-flow"
+            className="block p-5 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-md hover:border-emerald-300 dark:hover:border-emerald-700 transition-all"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-lg bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center">
+                <ArrowLeftRight className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-lg font-semibold">Flujo de cuentas</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
+                  Ver todas las transacciones por cuenta
                 </p>
               </div>
             </div>
