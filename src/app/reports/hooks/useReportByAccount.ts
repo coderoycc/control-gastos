@@ -23,6 +23,7 @@ export function useReportByAccount() {
   const [showFilters, setShowFilters] = useState(false);
   const [allTransactions, setAllTransactions] = useState(false);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [selectedLabelId, setSelectedLabelId] = useState<string | null>(null);
 
   const [dateRange, setDateRange] = useState({
     start: globalDateRange?.start ?? format(monthStart, 'yyyy-MM-dd'),
@@ -83,17 +84,24 @@ export function useReportByAccount() {
           const isDestination = t.type === 'transferencia' && t.toAccountId === currentAccount.id;
           if (!isSource && !isDestination) return false;
         }
-        if (allTransactions || !rangeValid) return true;
-        return isWithinInterval(parseISO(t.date), {
-          start: filterStart,
-          end: filterEnd,
-        });
+        if (allTransactions || !rangeValid) {
+          // date filter skipped
+        } else {
+          if (!isWithinInterval(parseISO(t.date), { start: filterStart, end: filterEnd })) return false;
+        }
+        // label filter
+        if (selectedLabelId === '__none__') {
+          if (t.labels && t.labels.length > 0) return false;
+        } else if (selectedLabelId !== null) {
+          if (!t.labels || !t.labels.includes(selectedLabelId)) return false;
+        }
+        return true;
       })
       .sort((a, b) => {
         const diff = new Date(b.date).getTime() - new Date(a.date).getTime();
         return sortOrder === 'desc' ? diff : -diff;
       });
-  }, [transactions, currentAccount, dateRange, allTransactions, sortOrder]);
+  }, [transactions, currentAccount, dateRange, allTransactions, sortOrder, selectedLabelId]);
 
   const totals = useMemo(() => {
     if (currentAccount.id === 'all') {
@@ -192,6 +200,8 @@ export function useReportByAccount() {
     totals,
     prev,
     next,
+    selectedLabelId,
+    setSelectedLabelId,
     setCurrentAccountIndex,
     setShowAccountMenu,
     setShowFilters,

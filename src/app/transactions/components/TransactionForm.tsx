@@ -248,6 +248,29 @@ export function TransactionForm() {
             )}
           </div>
 
+          {/* Amount */}
+          <div>
+            <label className="block text-xs mb-1.5 text-gray-700 dark:text-gray-300">
+              Monto
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+                $
+              </span>
+              <input
+                type="number"
+                value={amount}
+                onChange={e => setAmount(e.target.value)}
+                placeholder="0.00"
+                step="0.01"
+                min="0"
+                autoFocus
+                className="w-full pl-7 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                required
+              />
+            </div>
+          </div>
+
           {/* Detail */}
           <div>
             <label className="block text-xs mb-1.5 text-gray-700 dark:text-gray-300">
@@ -265,28 +288,6 @@ export function TransactionForm() {
               className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
               required={type !== 'transferencia'}
             />
-          </div>
-
-          {/* Amount */}
-          <div>
-            <label className="block text-xs mb-1.5 text-gray-700 dark:text-gray-300">
-              Monto
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
-                $
-              </span>
-              <input
-                type="number"
-                value={amount}
-                onChange={e => setAmount(e.target.value)}
-                placeholder="0.00"
-                step="0.01"
-                min="0"
-                className="w-full pl-7 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
-                required
-              />
-            </div>
           </div>
 
           {/* Account */}
