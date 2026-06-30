@@ -1,12 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Save, Trash2, AlertTriangle, X, CalendarDays } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, AlertTriangle, X, CalendarDays, Clock } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 import { useEditTransactionForm, TRANSACTION_TYPES } from '../hooks/useEditTransactionForm';
 import { getBackgroundColor } from '../utils/transactionStyles';
 import { useParams } from 'react-router';
 import { useSpendingLimitAlert } from '../hooks/useSpendingLimitAlert';
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../../../components/ui/tooltip';
 import { useHorizontalSwipe } from '../../../hooks/useHorizontalSwipe';
 import { TagLabel } from '../../../components';
 
@@ -16,15 +15,18 @@ function parseDateString(str: string): Date | undefined {
   return new Date(year, month - 1, day);
 }
 
-function formatDateDisplay(str: string): string {
-  if (!str) return '';
-  const d = parseDateString(str);
-  if (!d) return str;
-  return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+function formatDateTimeDisplay(dateStr: string, timeStr: string): string {
+  if (!dateStr) return '';
+  const d = parseDateString(dateStr);
+  if (!d) return dateStr;
+  const datePart = d.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+  if (!timeStr) return datePart;
+  return `${datePart}, ${timeStr}`;
 }
 
 export function EditTransactionForm() {
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [limitModalOpen, setLimitModalOpen] = useState(false);
   const calendarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -46,6 +48,7 @@ export function EditTransactionForm() {
   const {
     type,
     date,
+    time,
     detail,
     amount,
     accountId,
@@ -56,6 +59,7 @@ export function EditTransactionForm() {
     accounts,
     setType,
     setDate,
+    setTime,
     setDetail,
     setAmount,
     setAccountId,
@@ -100,59 +104,13 @@ export function EditTransactionForm() {
         <h2 className="font-medium flex-1">Editar Transacción</h2>
 
         {activeLimit && type === 'salida' && alertType && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  className="w-6 h-6 rounded-full bg-orange-500 hover:bg-orange-600 text-white flex items-center justify-center font-bold text-xs shadow-sm transition-all hover:scale-105 cursor-pointer mr-1"
-                >
-                  ?
-                </button>
-              </TooltipTrigger>
-              <TooltipContent 
-                side="bottom" 
-                align="end" 
-                className="p-3 max-w-[260px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xl rounded-lg text-gray-800 dark:text-gray-200 z-[110]"
-              >
-                <div className="space-y-1.5 text-xs">
-                  <p className="font-semibold text-orange-600 dark:text-orange-400 border-b border-gray-100 dark:border-gray-800 pb-1">
-                    Detalle del Límite de Gasto
-                  </p>
-                  <div className="flex justify-between gap-4">
-                    <span>Límite establecido:</span>
-                    <span className="font-mono font-semibold text-gray-900 dark:text-white">
-                      ${activeLimit.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span>Gastos del mes (otros):</span>
-                    <span className="font-mono">
-                      ${monthlyExpensesTotalWithoutCurrent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-4 border-b border-gray-100 dark:border-gray-800 pb-1">
-                    <span>Monto modificado:</span>
-                    <span className="font-mono">
-                      ${(parseFloat(amount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-4 font-semibold text-gray-900 dark:text-white pt-0.5">
-                    <span>Total Proyectado:</span>
-                    <span className="font-mono">
-                      ${totalWithCurrent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-4 text-[10px] text-gray-500 dark:text-gray-400">
-                    <span>Porcentaje de límite:</span>
-                    <span className={`font-mono font-bold ${percentage >= 100 ? 'text-red-500 dark:text-red-400' : percentage >= 90 ? 'text-orange-500 dark:text-orange-400' : 'text-gray-600 dark:text-gray-300'}`}>
-                      {percentage.toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <button
+            type="button"
+            onClick={() => setLimitModalOpen(true)}
+            className="w-6 h-6 rounded-full bg-orange-500 active:bg-orange-600 text-white flex items-center justify-center font-bold text-xs shadow-sm transition-all active:scale-95 cursor-pointer mr-1"
+          >
+            ?
+          </button>
         )}
 
         <button
@@ -220,10 +178,10 @@ export function EditTransactionForm() {
             </div>
           </div>
 
-          {/* Date */}
+          {/* Date & Time */}
           <div className="relative" ref={calendarRef}>
             <label className="block text-xs mb-1.5 text-gray-700 dark:text-gray-300">
-              Fecha
+              Fecha y Hora
             </label>
             <button
               type="button"
@@ -231,7 +189,7 @@ export function EditTransactionForm() {
               className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-left flex items-center justify-between gap-2 transition-colors hover:border-blue-400 dark:hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400/40"
             >
               <span className={date ? 'text-gray-800 dark:text-gray-100' : 'text-gray-400'}>
-                {date ? formatDateDisplay(date) : 'Seleccionar fecha'}
+                {date ? formatDateTimeDisplay(date, time) : 'Seleccionar fecha y hora'}
               </span>
               <CalendarDays className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
             </button>
@@ -248,7 +206,6 @@ export function EditTransactionForm() {
                       const dd = String(day.getDate()).padStart(2, '0');
                       setDate(`${yyyy}-${mm}-${dd}`);
                     }
-                    setCalendarOpen(false);
                   }}
                   defaultMonth={parseDateString(date)}
                   captionLayout="dropdown-buttons"
@@ -256,6 +213,28 @@ export function EditTransactionForm() {
                   toYear={new Date().getFullYear() + 1}
                   className="rdp-custom"
                 />
+                {/* Selector de hora */}
+                <div className="px-4 pb-3 pt-2 border-t border-gray-100 dark:border-gray-800">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1.5 shrink-0">
+                      <Clock className="w-3.5 h-3.5" />
+                      Hora
+                    </span>
+                    <input
+                      type="time"
+                      value={time}
+                      onChange={e => setTime(e.target.value)}
+                      className="flex-1 px-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setCalendarOpen(false)}
+                      className="px-3 py-1.5 rounded-lg bg-blue-600 dark:bg-blue-500 text-white text-xs font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
+                    >
+                      Listo
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -403,6 +382,109 @@ export function EditTransactionForm() {
           </button>
         </div>
       </form>
+
+      {/* Modal de detalle de límite de gasto */}
+      {limitModalOpen && activeLimit && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/50"
+          onClick={() => setLimitModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header del modal */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
+                  ?
+                </span>
+                <h3 className="font-semibold text-sm text-gray-900 dark:text-white">
+                  Detalle del Límite de Gasto
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setLimitModalOpen(false)}
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-400"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Cuerpo del modal */}
+            <div className="px-5 py-4 space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-500 dark:text-gray-400">Límite establecido</span>
+                <span className="font-mono font-semibold text-gray-900 dark:text-white">
+                  ${activeLimit.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-500 dark:text-gray-400">Gastos del mes (otros)</span>
+                <span className="font-mono text-gray-700 dark:text-gray-300">
+                  ${monthlyExpensesTotalWithoutCurrent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-500 dark:text-gray-400">Monto modificado</span>
+                <span className="font-mono text-gray-700 dark:text-gray-300">
+                  ${(parseFloat(amount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+
+              {/* Separador */}
+              <div className="border-t border-gray-100 dark:border-gray-800 pt-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-semibold text-gray-900 dark:text-white">Total Proyectado</span>
+                  <span className="font-mono font-semibold text-gray-900 dark:text-white">
+                    ${totalWithCurrent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
+
+              {/* Barra de progreso */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                  <span>Porcentaje del límite</span>
+                  <span className={`font-mono font-bold ${
+                    percentage >= 100
+                      ? 'text-red-500 dark:text-red-400'
+                      : percentage >= 90
+                      ? 'text-orange-500 dark:text-orange-400'
+                      : 'text-gray-600 dark:text-gray-300'
+                  }`}>
+                    {percentage.toFixed(1)}%
+                  </span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      percentage >= 100
+                        ? 'bg-red-500'
+                        : percentage >= 90
+                        ? 'bg-orange-500'
+                        : 'bg-green-500'
+                    }`}
+                    style={{ width: `${Math.min(percentage, 100)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 pb-5">
+              <button
+                type="button"
+                onClick={() => setLimitModalOpen(false)}
+                className="w-full py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 active:bg-gray-200 dark:active:bg-gray-700 transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (

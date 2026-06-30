@@ -57,8 +57,8 @@ export function useTransactionFilters(currentDate: Date): TransactionFiltersResu
     }
 
     return filtered.sort((a, b) => {
-      const timeA = new Date(a.date).getTime();
-      const timeB = new Date(b.date).getTime();
+      const timeA = new Date(`${a.date}T${a.time || '00:00'}`).getTime();
+      const timeB = new Date(`${b.date}T${b.time || '00:00'}`).getTime();
       return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
     });
   }, [transactions, selectedAccount, currentDate, startDate, endDate, sortOrder]);

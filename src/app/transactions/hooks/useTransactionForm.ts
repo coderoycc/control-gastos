@@ -17,6 +17,10 @@ export function useTransactionForm() {
     return `${year}-${month}-${day}`;
   };
   const [date, setDate] = useState(getLocalDateString());
+  const [time, setTime] = useState(() => {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  });
   const [detail, setDetail] = useState('');
   const [amount, setAmount] = useState('');
   const [accountId, setAccountId] = useState(accounts[0]?.id || '');
@@ -82,6 +86,7 @@ export function useTransactionForm() {
         addTransaction({
           type,
           date,
+          time,
           detail,
           amount: transferAmount,
           accountId,
@@ -97,6 +102,7 @@ export function useTransactionForm() {
         addTransaction({
           type,
           date,
+          time,
           detail,
           amount: parseFloat(amount),
           accountId,
@@ -106,13 +112,14 @@ export function useTransactionForm() {
 
       navigate('/');
     },
-    [type, date, detail, amount, accountId, toAccountId, selectedLabels, addTransaction, transferBetweenAccounts, navigate]
+    [type, date, time, detail, amount, accountId, toAccountId, selectedLabels, addTransaction, transferBetweenAccounts, navigate]
   );
 
   return {
     // State
     type,
     date,
+    time,
     detail,
     amount,
     accountId,
@@ -124,6 +131,7 @@ export function useTransactionForm() {
     // Setters
     setType,
     setDate,
+    setTime,
     setDetail,
     setAmount,
     setAccountId,

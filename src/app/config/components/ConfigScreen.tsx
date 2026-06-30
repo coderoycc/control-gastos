@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Settings, CreditCard, Tags, DollarSign, Database, Shield, Moon, Sun } from 'lucide-react';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { AccountSection } from './AccountSection';
@@ -9,8 +9,9 @@ import { SecuritySection } from './SecuritySection';
 import type { DeleteTarget } from '../types';
 import { useData } from '../../context';
 import { useTheme } from '../../context/ThemeContext';
+import { useHorizontalSwipe } from '../../../hooks/useHorizontalSwipe';
 
-type TabKey = 'accounts' | 'labels' | 'limits' | 'data' | 'security';
+type TabKey = 'accounts' | 'labels' | 'limits' | 'security' | 'data';
 
 interface TabConfig {
   key: TabKey;
@@ -31,6 +32,44 @@ export function ConfigScreen() {
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const { theme, toggleTheme } = useTheme();
   const { deleteAccount, deleteLabel, deleteSpendingLimit } = useData();
+
+  const tabBarRef = useRef<HTMLDivElement>(null);
+  const activeIndex = TABS.findIndex(t => t.key === activeTab);
+
+  // Auto-scroll la barra de tabs para mantener el tab activo visible
+  useEffect(() => {
+    const bar = tabBarRef.current;
+    if (!bar) return;
+    const activeBtn = bar.children[activeIndex] as HTMLElement | undefined;
+    if (!activeBtn) return;
+    const barRect = bar.getBoundingClientRect();
+    const btnRect = activeBtn.getBoundingClientRect();
+    const scrollLeft = bar.scrollLeft + (btnRect.left - barRect.left) - barRect.width / 2 + btnRect.width / 2;
+    bar.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+  }, [activeIndex]);
+
+  const cycleTab = useCallback((direction: 'left' | 'right') => {
+    setActiveTab(current => {
+      const idx = TABS.findIndex(t => t.key === current);
+      if (direction === 'left') {
+        return TABS[Math.min(idx + 1, TABS.length - 1)].key;
+      } else {
+        return TABS[Math.max(idx - 1, 0)].key;
+      }
+    });
+  }, []);
+
+  const swipeRef = useHorizontalSwipe(
+    {
+      onSwipeLeft: () => cycleTab('left'),
+      onSwipeRight: () => cycleTab('right'),
+    },
+    {
+      threshold: 40,
+      velocityThreshold: 0.2,
+      preventScrollOnSwipe: true,
+    },
+  );
 
   const handleDelete = useCallback(
     (id: string) => {
@@ -81,7 +120,7 @@ export function ConfigScreen() {
         </div>
 
         {/* Tabs - scrollable horizontal */}
-        <div className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-800 scrollbar-none">
+        <div ref={tabBarRef} className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-800 scrollbar-none">
           {TABS.map(tab => {
             const Icon = tab.icon;
             return (
@@ -102,8 +141,11 @@ export function ConfigScreen() {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-gray-50/50 dark:bg-gray-950/20">
+      {/* Content — área swipeable */}
+      <div
+        ref={swipeRef}
+        className="flex-1 flex flex-col overflow-hidden bg-gray-50/50 dark:bg-gray-950/20"
+      >
         {activeTab === 'accounts' && <AccountSection onDelete={handleDelete} />}
         {activeTab === 'labels' && <LabelSection onDelete={handleDelete} />}
         {activeTab === 'limits' && <LimitSection onDelete={handleDelete} />}
@@ -122,3 +164,4 @@ export function ConfigScreen() {
     </div>
   );
 }
+
