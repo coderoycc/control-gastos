@@ -53,7 +53,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           }
         } else {
           const sorted = [...storedTransactions].sort(
-            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+            (a, b) => new Date(`${b.date}T${b.time || '00:00'}`).getTime() - new Date(`${a.date}T${a.time || '00:00'}`).getTime()
           );
           if (!cancelled) {
             setTransactions(sorted);
@@ -110,7 +110,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     ]);
 
     const sorted = [...backupData.transactions].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      (a, b) => new Date(`${b.date}T${b.time || '00:00'}`).getTime() - new Date(`${a.date}T${a.time || '00:00'}`).getTime()
     );
     setTransactions(sorted);
     setAccounts(backupData.accounts);

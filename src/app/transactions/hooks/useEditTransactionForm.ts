@@ -19,6 +19,7 @@ export function useEditTransactionForm() {
 
   const [type, setType] = useState<TransactionType>('salida');
   const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
   const [detail, setDetail] = useState('');
   const [amount, setAmount] = useState('');
   const [accountId, setAccountId] = useState('');
@@ -32,6 +33,7 @@ export function useEditTransactionForm() {
       if (transaction) {
         setType(transaction.type);
         setDate(transaction.date);
+        setTime(transaction.time || '');
         setDetail(transaction.detail);
         setAmount(transaction.amount.toString());
         setAccountId(transaction.accountId);
@@ -109,6 +111,7 @@ export function useEditTransactionForm() {
         updateTransaction(id, {
           type,
           date,
+          time,
           detail,
           amount: transferAmount,
           accountId,
@@ -124,6 +127,7 @@ export function useEditTransactionForm() {
         updateTransaction(id, {
           type,
           date,
+          time,
           detail,
           amount: parseFloat(amount),
           accountId,
@@ -134,7 +138,7 @@ export function useEditTransactionForm() {
       navigate(-1);
     },
     [
-      type, date, detail, amount, accountId, toAccountId, selectedLabels, id,
+      type, date, time, detail, amount, accountId, toAccountId, selectedLabels, id,
       getTransactionById, updateTransaction, transferBetweenAccounts, adjustBalance, navigate,
     ]
   );
@@ -150,6 +154,7 @@ export function useEditTransactionForm() {
     // State
     type,
     date,
+    time,
     detail,
     amount,
     accountId,
@@ -162,6 +167,7 @@ export function useEditTransactionForm() {
     // Setters
     setType,
     setDate,
+    setTime,
     setDetail,
     setAmount,
     setAccountId,

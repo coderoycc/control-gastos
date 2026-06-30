@@ -98,7 +98,7 @@ export function useReportByAccount() {
         return true;
       })
       .sort((a, b) => {
-        const diff = new Date(b.date).getTime() - new Date(a.date).getTime();
+        const diff = new Date(`${b.date}T${b.time || '00:00'}`).getTime() - new Date(`${a.date}T${a.time || '00:00'}`).getTime();
         return sortOrder === 'desc' ? diff : -diff;
       });
   }, [transactions, currentAccount, dateRange, allTransactions, sortOrder, selectedLabelId]);
