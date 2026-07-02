@@ -1,16 +1,16 @@
+import { useState, useRef, useEffect } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
-  PieChart as PieIcon,
-  BarChart3 as BarIcon,
-  TrendingUp as LineIcon,
   Tag as TagIcon,
   CreditCard as CardIcon,
-  Calendar as CalendarIcon,
-  Activity as TypeIcon,
-  TrendingUp,
-  TrendingDown,
+  MoreVertical,
+  PieChart as PieChartIcon,
+  AlignLeft as LinesIcon,
+  BarChart2 as SummaryIcon,
   AlertCircle,
+  ArrowDownCircle,
+  ArrowUpCircle,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -18,43 +18,76 @@ import {
   Pie,
   Cell,
   Tooltip,
-  Legend,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  LineChart,
-  Line,
 } from 'recharts';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useReportCharts } from '../hooks/useReportCharts';
-import { formatCurrency, renderPieLabel, CHART_COLORS } from '../utils/chartUtils';
+import { formatCurrency, CHART_COLORS } from '../utils/chartUtils';
+
+type ViewMode = 'pie' | 'lines' | 'summary';
+
+function CustomPieLabel({
+  cx, cy, midAngle, innerRadius, outerRadius, percent, name,
+}: {
+  cx: number; cy: number; midAngle: number;
+  innerRadius: number; outerRadius: number;
+  percent: number; name: string;
+}) {
+  if (percent < 0.05) return null;
+  const RADIAN = Math.PI / 180;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.55;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  const shortName = name.length > 10 ? name.slice(0, 9) + '…' : name;
+  return (
+    <text
+      x={x} y={y}
+      fill="white"
+      textAnchor="middle"
+      dominantBaseline="central"
+      style={{ fontSize: 10, fontWeight: 700, pointerEvents: 'none' }}
+    >
+      {shortName}
+    </text>
+  );
+}
 
 export function ChartView() {
   const {
     headerRef,
     summaryRef,
-    chartRef,
     currentDate,
-    chartType,
     dimension,
     filterType,
-    totals,
     categoryData,
-    dateData,
+    totals,
     hasData,
-    setChartType,
     setFilterType,
     handleDimensionChange,
     handlePreviousMonth,
     handleNextMonth,
   } = useReportCharts();
 
+  const [viewMode, setViewMode] = useState<ViewMode>('pie');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    if (menuOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
+
+  const totalSum = categoryData.reduce((acc, item) => acc + item.value, 0);
+
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
-      {/* SELECTOR DE MESES — swipe + flechas */}
+
+      {/* ── SELECTOR DE MES (con swipe horizontal) ──────────────────── */}
       <div
         ref={headerRef}
         className="px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex items-center justify-between"
@@ -68,11 +101,9 @@ export function ChartView() {
           <ChevronLeft className="w-4 h-4" />
         </button>
 
-        <div className="text-center">
-          <span className="text-sm font-semibold uppercase tracking-wider text-purple-600 dark:text-purple-400">
-            {format(currentDate, 'MMMM yyyy', { locale: es })}
-          </span>
-        </div>
+        <span className="text-sm font-semibold uppercase tracking-wider text-purple-600 dark:text-purple-400">
+          {format(currentDate, 'MMMM yyyy', { locale: es })}
+        </span>
 
         <button
           onClick={handleNextMonth}
@@ -83,375 +114,336 @@ export function ChartView() {
         </button>
       </div>
 
-      <div className="flex-1 overflow-auto p-4 space-y-4">
-        {/* RESUMEN RÁPIDO — swipeable */}
-        <div
-          ref={summaryRef}
-          className="grid grid-cols-2 gap-3"
-          style={{ touchAction: 'pan-y' }}
-        >
-          <div className="p-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex items-center gap-3">
-            <div className="p-2 bg-emerald-100 dark:bg-emerald-950/50 rounded-lg">
-              <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <div>
-              <p className="text-2xs text-gray-500 dark:text-gray-400 font-medium uppercase">Ingresos</p>
-              <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                {formatCurrency(totals.income)}
-              </p>
-            </div>
-          </div>
+      {/* ── CONTENIDO ────────────────────────────────────────────────── */}
+      <div
+        ref={summaryRef}
+        className="flex-1 overflow-auto p-4 space-y-3"
+        style={{ touchAction: 'pan-y' }}
+      >
 
-          <div className="p-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex items-center gap-3">
-            <div className="p-2 bg-rose-100 dark:bg-rose-950/50 rounded-lg">
-              <TrendingDown className="w-5 h-5 text-rose-600 dark:text-rose-400" />
-            </div>
-            <div>
-              <p className="text-2xs text-gray-500 dark:text-gray-400 font-medium uppercase">Gastos</p>
-              <p className="text-sm font-bold text-rose-600 dark:text-rose-400">
-                {formatCurrency(totals.expenses)}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* SELECTOR DE DIMENSIÓN DE AGRUPACIÓN */}
-        <div className="bg-white dark:bg-gray-900 p-1.5 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex gap-1">
+        {/* ── MENÚ PRINCIPAL: Etiquetas / Cuentas ─────────────────── */}
+        <div className="bg-white dark:bg-gray-900 p-1 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex gap-1">
           <button
             onClick={() => handleDimensionChange('tags')}
-            className={`flex-1 py-2 px-1 rounded-lg text-xs font-semibold flex flex-col sm:flex-row items-center justify-center gap-1.5 transition-all ${
+            className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all duration-200 ${
               dimension === 'tags'
-                ? 'bg-purple-600 text-white shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                ? 'bg-purple-600 text-white shadow-md'
+                : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
             <TagIcon className="w-3.5 h-3.5" />
-            <span>Etiquetas</span>
+            Etiquetas
           </button>
-
           <button
             onClick={() => handleDimensionChange('accounts')}
-            className={`flex-1 py-2 px-1 rounded-lg text-xs font-semibold flex flex-col sm:flex-row items-center justify-center gap-1.5 transition-all ${
+            className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all duration-200 ${
               dimension === 'accounts'
-                ? 'bg-purple-600 text-white shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                ? 'bg-purple-600 text-white shadow-md'
+                : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
             <CardIcon className="w-3.5 h-3.5" />
-            <span>Cuentas</span>
-          </button>
-
-          <button
-            onClick={() => handleDimensionChange('date')}
-            className={`flex-1 py-2 px-1 rounded-lg text-xs font-semibold flex flex-col sm:flex-row items-center justify-center gap-1.5 transition-all ${
-              dimension === 'date'
-                ? 'bg-purple-600 text-white shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-            }`}
-          >
-            <CalendarIcon className="w-3.5 h-3.5" />
-            <span>Fechas</span>
-          </button>
-
-          <button
-            onClick={() => handleDimensionChange('type')}
-            className={`flex-1 py-2 px-1 rounded-lg text-xs font-semibold flex flex-col sm:flex-row items-center justify-center gap-1.5 transition-all ${
-              dimension === 'type'
-                ? 'bg-purple-600 text-white shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-            }`}
-          >
-            <TypeIcon className="w-3.5 h-3.5" />
-            <span>Flujos</span>
+            Cuentas
           </button>
         </div>
 
-        {/* SELECTOR DE FILTRO DE TRANSACCIONES */}
-        {dimension !== 'date' && dimension !== 'type' && (
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Mostrar:</span>
-            <div className="flex bg-gray-200/60 dark:bg-gray-800/60 p-0.5 rounded-lg border border-gray-200/20 shadow-inner max-w-xs">
-              <button
-                onClick={() => setFilterType('salida')}
-                className={`py-1 px-3 rounded-md text-xs font-semibold transition-all ${
-                  filterType === 'salida'
-                    ? 'bg-white dark:bg-gray-700 text-rose-600 dark:text-rose-400 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                Gastos
-              </button>
-              <button
-                onClick={() => setFilterType('entrada')}
-                className={`py-1 px-3 rounded-md text-xs font-semibold transition-all ${
-                  filterType === 'entrada'
-                    ? 'bg-white dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                Ingresos
-              </button>
-              <button
-                onClick={() => setFilterType('all')}
-                className={`py-1 px-3 rounded-md text-xs font-semibold transition-all ${
-                  filterType === 'all'
-                    ? 'bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                Ambos
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* SECTOR GRÁFICO PRINCIPAL */}
-        <div
-          ref={chartRef}
-          className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col gap-4"
-          style={{ touchAction: 'pan-y' }}
-        >
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300">
-              {dimension === 'tags' &&
-                `Distribución por Etiquetas (${filterType === 'salida' ? 'Gastos' : filterType === 'entrada' ? 'Ingresos' : 'Todos'})`}
-              {dimension === 'accounts' &&
-                `Distribución por Cuentas (${filterType === 'salida' ? 'Gastos' : filterType === 'entrada' ? 'Ingresos' : 'Todos'})`}
-              {dimension === 'date' && 'Evolución de Ingresos y Gastos'}
-              {dimension === 'type' && 'Comparativa de Flujos'}
-            </h3>
-
-            {/* SELECTOR DE TIPO DE GRÁFICO */}
-            <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 p-0.5 rounded-lg border border-gray-200/50 dark:border-gray-800">
-              <button
-                onClick={() => setChartType('pie')}
-                disabled={dimension === 'date'}
-                className={`p-1.5 rounded-md transition-all ${
-                  chartType === 'pie'
-                    ? 'bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 shadow-sm'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white'
-                } ${dimension === 'date' ? 'opacity-40 cursor-not-allowed' : ''}`}
-                title="Gráfico de Torta"
-              >
-                <PieIcon className="w-4 h-4" />
-              </button>
-
-              <button
-                onClick={() => setChartType('bar')}
-                className={`p-1.5 rounded-md transition-all ${
-                  chartType === 'bar'
-                    ? 'bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 shadow-sm'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white'
-                }`}
-                title="Gráfico de Barras"
-              >
-                <BarIcon className="w-4 h-4" />
-              </button>
-
-              <button
-                onClick={() => setChartType('line')}
-                className={`p-1.5 rounded-md transition-all ${
-                  chartType === 'line'
-                    ? 'bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 shadow-sm'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white'
-                }`}
-                title="Gráfico de Líneas"
-              >
-                <LineIcon className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* RENDERIZADO DEL GRÁFICO */}
-          <div
-            className="h-64 sm:h-80 w-full flex items-center justify-center"
-            style={{ touchAction: 'none' }}
+        {/* ── SUB-MENÚ: Salida / Entrada ───────────────────────────── */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setFilterType('salida')}
+            className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border transition-all duration-200 ${
+              filterType === 'salida'
+                ? 'bg-rose-500 border-rose-500 text-white shadow-md'
+                : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:border-rose-300 dark:hover:border-rose-700'
+            }`}
           >
+            <ArrowDownCircle className="w-3.5 h-3.5" />
+            Salida
+          </button>
+          <button
+            onClick={() => setFilterType('entrada')}
+            className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border transition-all duration-200 ${
+              filterType === 'entrada'
+                ? 'bg-emerald-500 border-emerald-500 text-white shadow-md'
+                : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:border-emerald-300 dark:hover:border-emerald-700'
+            }`}
+          >
+            <ArrowUpCircle className="w-3.5 h-3.5" />
+            Entrada
+          </button>
+        </div>
+
+        {/* ── CARD PRINCIPAL ──────────────────────────────────────────────── */}
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+          {/* Cabecera */}
+          <div className="px-4 pt-4 pb-3 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">
+                {dimension === 'tags' ? 'Por Etiquetas' : 'Por Cuentas'}
+              </h3>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                {filterType === 'salida' ? 'Gastos · Salidas' : 'Ingresos · Entradas'}
+              </p>
+            </div>
+
+            {/* Menú 3 puntos */}
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen(prev => !prev)}
+                className="p-2 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                aria-label="Opciones de visualización"
+              >
+                <MoreVertical className="w-4 h-4" />
+              </button>
+
+              {menuOpen && (
+                <div className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden">
+                  {(
+                    [
+                      { mode: 'pie' as ViewMode, label: 'Gráfico', Icon: PieChartIcon },
+                      { mode: 'lines' as ViewMode, label: 'Líneas', Icon: LinesIcon },
+                      { mode: 'summary' as ViewMode, label: 'Resumen', Icon: SummaryIcon },
+                    ] as { mode: ViewMode; label: string; Icon: React.ElementType }[]
+                  ).map(({ mode, label, Icon }) => (
+                    <button
+                      key={mode}
+                      onClick={() => { setViewMode(mode); setMenuOpen(false); }}
+                      className={`w-full px-4 py-2.5 flex items-center gap-3 text-xs font-semibold transition-colors ${
+                        viewMode === mode
+                          ? 'bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400'
+                          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      {label}
+                      {viewMode === mode && (
+                        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-purple-500" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Separador */}
+          <div className="border-t border-gray-100 dark:border-gray-800 mx-4" />
+
+          {/* Cuerpo */}
+          <div className="p-4">
             {!hasData ? (
-              <div className="flex flex-col items-center justify-center text-center p-6 text-gray-500 dark:text-gray-400">
-                <AlertCircle className="w-10 h-10 text-gray-400 dark:text-gray-600 mb-2.5 animate-pulse" />
-                <p className="text-sm font-semibold">Sin transacciones registradas</p>
-                <p className="text-xs text-gray-400 mt-1 max-w-[220px]">
-                  {dimension === 'date'
-                    ? 'No se registran movimientos para graficar en este mes.'
-                    : `No hay ${filterType === 'salida' ? 'gastos' : filterType === 'entrada' ? 'ingresos' : 'movimientos'} registrados para este análisis en este mes.`}
+              <div className="flex flex-col items-center justify-center text-center py-10 gap-2">
+                <AlertCircle className="w-10 h-10 text-gray-300 dark:text-gray-600 animate-pulse" />
+                <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">Sin transacciones</p>
+                <p className="text-xs text-gray-400 max-w-[210px]">
+                  No hay {filterType === 'salida' ? 'gastos' : 'ingresos'} registrados en este mes.
                 </p>
               </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                {chartType === 'pie' && dimension !== 'date' ? (
-                  <PieChart>
-                    <Pie
-                      data={categoryData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={dimension === 'type' ? 45 : 0}
-                      outerRadius="75%"
-                      paddingAngle={3}
-                      dataKey="value"
-                      labelLine={false}
-                      label={renderPieLabel}
-                    >
-                      {categoryData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={entry.color || CHART_COLORS[index % CHART_COLORS.length]}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      trigger="click"
-                      formatter={(value: number) => [formatCurrency(value), 'Monto']}
-                      contentStyle={{
-                        backgroundColor: 'rgba(31, 41, 55, 0.95)',
-                        borderColor: '#374151',
-                        borderRadius: '0.75rem',
-                        color: '#f9fafb',
-                      }}
-                    />
-                  </PieChart>
-                ) : chartType === 'bar' ? (
-                  dimension === 'date' ? (
-                    <BarChart data={dateData} margin={{ top: 10, right: 5, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.15} />
-                      <XAxis dataKey="name" fontSize={10} tickLine={false} />
-                      <YAxis fontSize={10} tickLine={false} />
-                      <Tooltip
-                        trigger="click"
-                        labelFormatter={(label, items) => {
-                          if (items && items[0]) {
-                            return items[0].payload.fullDate;
-                          }
-                          return `Día ${label}`;
-                        }}
-                        formatter={(value: number) => [formatCurrency(value), '']}
-                        contentStyle={{
-                          backgroundColor: 'rgba(31, 41, 55, 0.95)',
-                          borderColor: '#374151',
-                          borderRadius: '0.75rem',
-                          color: '#f9fafb',
-                        }}
-                      />
-                      <Legend iconSize={8} wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                      <Bar dataKey="Ingresos" fill="#10b981" radius={[3, 3, 0, 0]} />
-                      <Bar dataKey="Gastos" fill="#ef4444" radius={[3, 3, 0, 0]} />
-                    </BarChart>
-                  ) : (
-                    <BarChart data={categoryData} margin={{ top: 10, right: 5, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.15} />
-                      <XAxis dataKey="name" fontSize={10} tickLine={false} />
-                      <YAxis fontSize={10} tickLine={false} />
-                      <Tooltip
-                        trigger="click"
-                        formatter={(value: number) => [formatCurrency(value), 'Monto']}
-                        contentStyle={{
-                          backgroundColor: 'rgba(31, 41, 55, 0.95)',
-                          borderColor: '#374151',
-                          borderRadius: '0.75rem',
-                          color: '#f9fafb',
-                        }}
-                      />
-                      <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+            ) : viewMode === 'pie' ? (
+              <div>
+                <div className="h-56 w-full" style={{ touchAction: 'none' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={categoryData}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius="82%"
+                        paddingAngle={2}
+                        dataKey="value"
+                        labelLine={false}
+                        label={CustomPieLabel as any}
+                      >
                         {categoryData.map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
                             fill={entry.color || CHART_COLORS[index % CHART_COLORS.length]}
                           />
                         ))}
-                      </Bar>
-                    </BarChart>
-                  )
-                ) : dimension === 'date' ? (
-                  <LineChart data={dateData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.15} />
-                    <XAxis dataKey="name" fontSize={10} tickLine={false} />
-                    <YAxis fontSize={10} tickLine={false} />
-                    <Tooltip
-                      trigger="click"
-                      labelFormatter={(label, items) => {
-                        if (items && items[0]) {
-                          return items[0].payload.fullDate;
-                        }
-                        return `Día ${label}`;
-                      }}
-                      formatter={(value: number) => [formatCurrency(value), '']}
-                      contentStyle={{
-                        backgroundColor: 'rgba(31, 41, 55, 0.95)',
-                        borderColor: '#374151',
-                        borderRadius: '0.75rem',
-                        color: '#f9fafb',
-                      }}
-                    />
-                    <Legend iconSize={8} wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                    <Line type="monotone" dataKey="Ingresos" stroke="#10b981" strokeWidth={2.5} dot={{ r: 1 }} activeDot={{ r: 4 }} />
-                    <Line type="monotone" dataKey="Gastos" stroke="#ef4444" strokeWidth={2.5} dot={{ r: 1 }} activeDot={{ r: 4 }} />
-                  </LineChart>
-                ) : (
-                  <LineChart data={categoryData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.15} />
-                    <XAxis dataKey="name" fontSize={10} tickLine={false} />
-                    <YAxis fontSize={10} tickLine={false} />
-                    <Tooltip
-                      trigger="click"
-                      formatter={(value: number) => [formatCurrency(value), 'Monto']}
-                      contentStyle={{
-                        backgroundColor: 'rgba(31, 41, 55, 0.95)',
-                        borderColor: '#374151',
-                        borderRadius: '0.75rem',
-                        color: '#f9fafb',
-                      }}
-                    />
-                    <Line type="monotone" dataKey="value" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }} />
-                  </LineChart>
-                )}
-              </ResponsiveContainer>
-            )}
-          </div>
-        </div>
-
-        {/* DETALLE Y LEYENDA PREMIUM */}
-        {hasData && dimension !== 'date' && (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
-            <div className="px-4 py-3 bg-gray-50/50 dark:bg-gray-800/30 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
-              <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Detalle Analítico</span>
-              <span className="text-2xs font-semibold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 px-2 py-0.5 rounded-full">
-                {categoryData.length} ítems
-              </span>
-            </div>
-
-            <div className="divide-y divide-gray-150 dark:divide-gray-800/60 max-h-60 overflow-y-auto">
-              {categoryData.map((item, idx) => {
-                const totalSum = categoryData.reduce((acc, curr) => acc + curr.value, 0);
-                const percent = totalSum > 0 ? (item.value / totalSum) * 100 : 0;
-
-                return (
-                  <div
-                    key={idx}
-                    className="p-3 flex items-center justify-between hover:bg-gray-50/80 dark:hover:bg-gray-800/30 transition-colors"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div
-                        className="w-3.5 h-3.5 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: item.color }}
+                      </Pie>
+                      <Tooltip
+                        trigger="click"
+                        formatter={(value: number) => [formatCurrency(value), 'Monto']}
+                        contentStyle={{
+                          backgroundColor: 'rgba(17, 24, 39, 0.97)',
+                          borderColor: '#374151',
+                          borderRadius: '0.75rem',
+                          color: '#f9fafb',
+                          fontSize: 12,
+                        }}
                       />
-                      <span className="text-sm font-semibold truncate max-w-[140px] sm:max-w-xs">
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                {/* Leyenda */}
+                <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5 justify-center">
+                  {categoryData.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-1.5">
+                      <span
+                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: item.color || CHART_COLORS[idx % CHART_COLORS.length] }}
+                      />
+                      <span className="text-xs text-gray-500 dark:text-gray-400 font-medium truncate max-w-[80px]">
                         {item.name}
                       </span>
                     </div>
-                    <div className="text-right">
-                      <span className="text-sm font-bold text-gray-900 dark:text-white">
-                        {formatCurrency(item.value)}
-                      </span>
-                      <span className="text-2xs text-gray-400 block font-medium">
-                        {percent.toFixed(1)}%
-                      </span>
+                  ))}
+                </div>
+              </div>
+            ) : viewMode === 'lines' ? (
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase mb-3">
+                  Top {dimension === 'tags' ? 'categorías' : 'cuentas'} de {filterType === 'salida' ? 'gasto' : 'ingreso'}
+                </p>
+                {categoryData.map((item, idx) => {
+                  const pct = totalSum > 0 ? (item.value / totalSum) * 100 : 0;
+                  const color = item.color || CHART_COLORS[idx % CHART_COLORS.length];
+                  return (
+                    <div key={idx} className="py-2">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 truncate max-w-[55%]">
+                          {item.name}
+                        </span>
+                        <span className="text-sm font-bold text-gray-900 dark:text-white">
+                          {formatCurrency(item.value)}
+                        </span>
+                      </div>
+                      <div className="relative h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                        <div
+                          className="absolute left-0 top-0 h-full rounded-full transition-all duration-700"
+                          style={{
+                            width: `${Math.max(pct, 1)}%`,
+                            backgroundColor: color,
+                          }}
+                        />
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase mb-3">
+                  Resumen de {filterType === 'salida' ? 'gastos' : 'ingresos'}
+                </p>
+
+                {/* Total general */}
+                <div className={`rounded-xl px-4 py-3 flex items-center justify-between mb-3 ${
+                  filterType === 'salida'
+                    ? 'bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/50'
+                    : 'bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50'
+                }`}>
+                  <span className={`text-xs font-bold uppercase tracking-wide ${
+                    filterType === 'salida'
+                      ? 'text-rose-500 dark:text-rose-400'
+                      : 'text-emerald-600 dark:text-emerald-400'
+                  }`}>
+                    Total {filterType === 'salida' ? 'gastos' : 'ingresos'}
+                  </span>
+                  <span className={`text-lg font-extrabold ${
+                    filterType === 'salida'
+                      ? 'text-rose-600 dark:text-rose-400'
+                      : 'text-emerald-600 dark:text-emerald-400'
+                  }`}>
+                    {formatCurrency(totalSum)}
+                  </span>
+                </div>
+
+                {/* Desglose por ítem */}
+                <div className="divide-y divide-gray-100 dark:divide-gray-800 rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+                  {categoryData.map((item, idx) => {
+                    const pct = totalSum > 0 ? (item.value / totalSum) * 100 : 0;
+                    const color = item.color || CHART_COLORS[idx % CHART_COLORS.length];
+                    return (
+                      <div
+                        key={idx}
+                        className="px-4 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span
+                            className="w-3 h-3 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: color }}
+                          />
+                          <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 truncate max-w-[140px]">
+                            {item.name}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-gray-900 dark:text-white">
+                            {formatCurrency(item.value)}
+                          </p>
+                          <p className="text-xs text-gray-400 font-medium">
+                            {pct.toFixed(1)}%
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Contraste y ahorro del mes */}
+                {(() => {
+                  const income  = totals.income;
+                  const expense = totals.expenses;
+                  const savings = income - expense;
+                  const isSalida = filterType === 'salida';
+                  const contrasteLabel = isSalida ? 'Total ingresos' : 'Total gastos';
+                  const contrasteVal   = isSalida ? income : expense;
+                  const savingsPositive = savings >= 0;
+                  return (
+                    <div className="mt-3 rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+                      {/* Fila contraste */}
+                      <div className="px-4 py-3 flex items-center justify-between bg-gray-50 dark:bg-gray-800/40">
+                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                          {contrasteLabel} (mes)
+                        </span>
+                        <span className={`text-sm font-bold ${
+                          isSalida
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : 'text-rose-500 dark:text-rose-400'
+                        }`}>
+                          {formatCurrency(contrasteVal)}
+                        </span>
+                      </div>
+
+                      {/* Separador */}
+                      <div className="border-t border-gray-100 dark:border-gray-700" />
+
+                      {/* Fila ahorro */}
+                      <div className={`px-4 py-3 flex items-center justify-between ${
+                        savingsPositive
+                          ? 'bg-emerald-50 dark:bg-emerald-950/30'
+                          : 'bg-rose-50 dark:bg-rose-950/30'
+                      }`}>
+                        <div>
+                          <span className={`text-xs font-bold uppercase tracking-wide ${
+                            savingsPositive
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-rose-500 dark:text-rose-400'
+                          }`}>
+                            {savingsPositive ? '💰 Ahorro' : '⚠️ Déficit'}
+                          </span>
+                          <p className="text-2xs text-gray-400 mt-0.5">
+                            {savingsPositive
+                              ? 'Ingresos superiores a gastos'
+                              : 'Gastos superiores a ingresos'}
+                          </p>
+                        </div>
+                        <span className={`text-lg font-extrabold ${
+                          savingsPositive
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : 'text-rose-600 dark:text-rose-400'
+                        }`}>
+                          {formatCurrency(Math.abs(savings))}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
