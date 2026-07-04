@@ -17,7 +17,7 @@ import {
   PieChart,
   Pie,
   Cell,
-  Tooltip,
+  Sector,
 } from 'recharts';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -26,29 +26,23 @@ import { formatCurrency, CHART_COLORS } from '../utils/chartUtils';
 
 type ViewMode = 'pie' | 'lines' | 'summary';
 
-function CustomPieLabel({
-  cx, cy, midAngle, innerRadius, outerRadius, percent, name,
-}: {
-  cx: number; cy: number; midAngle: number;
-  innerRadius: number; outerRadius: number;
-  percent: number; name: string;
-}) {
-  if (percent < 0.05) return null;
-  const RADIAN = Math.PI / 180;
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.55;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
-  const shortName = name.length > 10 ? name.slice(0, 9) + '…' : name;
+function renderActiveShape(props: any) {
+  const {
+    cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill,
+  } = props;
   return (
-    <text
-      x={x} y={y}
-      fill="white"
-      textAnchor="middle"
-      dominantBaseline="central"
-      style={{ fontSize: 10, fontWeight: 700, pointerEvents: 'none' }}
-    >
-      {shortName}
-    </text>
+    <Sector
+      cx={cx}
+      cy={cy}
+      innerRadius={innerRadius}
+      outerRadius={outerRadius + 14}
+      startAngle={startAngle}
+      endAngle={endAngle}
+      fill={fill}
+      stroke="white"
+      strokeWidth={2.5}
+      style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))' }}
+    />
   );
 }
 
@@ -82,6 +76,7 @@ export function ChartView() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [menuOpen]);
 
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const totalSum = categoryData.reduce((acc, item) => acc + item.value, 0);
 
   return (
@@ -251,8 +246,9 @@ export function ChartView() {
                         outerRadius="82%"
                         paddingAngle={2}
                         dataKey="value"
-                        labelLine={false}
-                        label={CustomPieLabel as any}
+                        activeIndex={activeIndex ?? undefined}
+                        activeShape={renderActiveShape}
+                        onClick={(_, index) => setActiveIndex(index === activeIndex ? null : index)}
                       >
                         {categoryData.map((entry, index) => (
                           <Cell
@@ -261,33 +257,55 @@ export function ChartView() {
                           />
                         ))}
                       </Pie>
-                      <Tooltip
-                        trigger="click"
-                        formatter={(value: number) => [formatCurrency(value), 'Monto']}
-                        contentStyle={{
-                          backgroundColor: 'rgba(17, 24, 39, 0.97)',
-                          borderColor: '#374151',
-                          borderRadius: '0.75rem',
-                          color: '#f9fafb',
-                          fontSize: 12,
-                        }}
-                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                {/* Leyenda */}
-                <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5 justify-center">
-                  {categoryData.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-1.5">
-                      <span
-                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: item.color || CHART_COLORS[idx % CHART_COLORS.length] }}
-                      />
-                      <span className="text-xs text-gray-500 dark:text-gray-400 font-medium truncate max-w-[80px]">
-                        {item.name}
-                      </span>
-                    </div>
-                  ))}
+                {/* Leyenda interactiva */}
+                <div className="mt-3 space-y-1">
+                  {categoryData.map((item, idx) => {
+                    const isActive = activeIndex === idx;
+                    const pct = totalSum > 0 ? (item.value / totalSum) * 100 : 0;
+                    const color = item.color || CHART_COLORS[idx % CHART_COLORS.length];
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => setActiveIndex(isActive ? null : idx)}
+                        className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-xl transition-all duration-200 ${
+                          isActive
+                            ? 'bg-gray-100 dark:bg-gray-800 ring-2 ring-offset-1 ring-gray-300 dark:ring-gray-600'
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 active:bg-gray-100 dark:active:bg-gray-800'
+                        }`}
+                      >
+                        <span
+                          className={`rounded-full flex-shrink-0 transition-all duration-200 ${
+                            isActive ? 'w-3.5 h-3.5 ring-2 ring-offset-1 ring-gray-400 dark:ring-gray-500' : 'w-2.5 h-2.5'
+                          }`}
+                          style={{ backgroundColor: color }}
+                        />
+                        <span className={`flex-1 text-left text-xs truncate transition-all duration-200 ${
+                          isActive
+                            ? 'font-bold text-gray-900 dark:text-white'
+                            : 'font-medium text-gray-500 dark:text-gray-400'
+                        }`}>
+                          {item.name}
+                        </span>
+                        <span className={`text-xs tabular-nums transition-all duration-200 ${
+                          isActive
+                            ? 'font-bold text-gray-900 dark:text-white'
+                            : 'font-semibold text-gray-600 dark:text-gray-300'
+                        }`}>
+                          {formatCurrency(item.value)}
+                        </span>
+                        <span className={`text-xs tabular-nums min-w-[3rem] text-right transition-all duration-200 ${
+                          isActive
+                            ? 'font-bold text-gray-700 dark:text-gray-200'
+                            : 'text-gray-400 dark:text-gray-500'
+                        }`}>
+                          {pct.toFixed(1)}%
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ) : viewMode === 'lines' ? (
