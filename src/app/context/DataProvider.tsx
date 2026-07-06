@@ -133,6 +133,35 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const refreshData = async () => {
+    setIsLoading(true);
+    try {
+      const [
+        storedTransactions,
+        storedAccounts,
+        storedLabels,
+        storedSpendingLimits,
+      ] = await Promise.all([
+        transactionRepo.getAll(),
+        accountRepo.getAll(),
+        labelRepo.getAll(),
+        spendingLimitRepo.getAll(),
+      ]);
+
+      const sorted = [...storedTransactions].sort(
+        (a, b) => new Date(`${b.date}T${b.time || '00:00'}`).getTime() - new Date(`${a.date}T${a.time || '00:00'}`).getTime()
+      );
+      setTransactions(sorted);
+      setAccounts(storedAccounts);
+      setLabels(storedLabels);
+      setSpendingLimits(storedSpendingLimits);
+    } catch (err) {
+      console.error('[DataProvider] Error refrescando datos:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const value: DataContextType = {
     isLoading,
     ...transactionsHook,
@@ -143,6 +172,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     userSettings,
     saveUserSettings,
     deleteUserSettings,
+    refreshData,
   };
 
   return (

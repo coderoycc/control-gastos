@@ -20,6 +20,8 @@ interface TransactionFiltersProps {
   onClearFilters: () => void;
   sortOrder: 'asc' | 'desc';
   onSortOrderChange: (order: 'asc' | 'desc') => void;
+  selectedLabelId: string | null;
+  onLabelChange: (labelId: string | null) => void;
 }
 
 function parseDateString(str: string): Date | undefined {
@@ -68,8 +70,10 @@ export function TransactionFilters({
   onClearFilters,
   sortOrder,
   onSortOrderChange,
+  selectedLabelId,
+  onLabelChange,
 }: TransactionFiltersProps) {
-  const { accounts } = useData();
+  const { accounts, labels } = useData();
 
   const [calendarOpen, setCalendarOpen] = useState(false);
   const lastClickRef = useRef<{ day: string; time: number } | null>(null);
@@ -127,7 +131,7 @@ export function TransactionFilters({
     <BottomSheet isOpen={isOpen} onClose={onClose} title="Filtros">
       <div className="p-4 space-y-4">
         <div>
-          <label className="block text-sm mb-2 text-gray-700 dark:text-gray-300">
+          <label className="block text-sm mb-2 text-gray-700 dark:text-gray-300 font-medium">
             Cuenta
           </label>
           <select
@@ -142,6 +146,58 @@ export function TransactionFilters({
               </option>
             ))}
           </select>
+        </div>
+
+        {/* Label filter — horizontal scroll row */}
+        <div>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Etiqueta</p>
+          <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar" style={{ scrollbarWidth: 'none' }}>
+            {/* "Todas" chip */}
+            <button
+              type="button"
+              onClick={() => onLabelChange(null)}
+              className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium border transition-all ${
+                selectedLabelId === null
+                  ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                  : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500'
+              }`}
+            >
+              Todas
+            </button>
+
+            {/* Label chips */}
+            {labels.map(label => {
+              const isSelected = selectedLabelId === label.id;
+              return (
+                <button
+                  key={label.id}
+                  type="button"
+                  onClick={() => onLabelChange(isSelected ? null : label.id)}
+                  className="flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium border transition-all"
+                  style={{
+                    borderColor: label.color,
+                    color: isSelected ? '#fff' : label.color,
+                    backgroundColor: isSelected ? label.color : `${label.color}20`,
+                  }}
+                >
+                  {label.name}
+                </button>
+              );
+            })}
+
+            {/* "Sin etiqueta" chip */}
+            <button
+              type="button"
+              onClick={() => onLabelChange('__none__')}
+              className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium border transition-all ${
+                selectedLabelId === '__none__'
+                  ? 'bg-gray-600 border-gray-600 text-white shadow-sm'
+                  : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500'
+              }`}
+            >
+              Sin etiqueta
+            </button>
+          </div>
         </div>
 
         {/* Date Range Picker */}
