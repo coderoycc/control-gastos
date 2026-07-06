@@ -1,6 +1,6 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Link } from 'react-router';
-import { Filter, Plus } from 'lucide-react';
+import { Filter, Plus, Search, RefreshCw } from 'lucide-react';
 import { SwipeableContainer, Summary } from '../components';
 import {
   useMonthNavigation,
@@ -9,8 +9,10 @@ import {
   TransactionCard,
   TransactionFilters,
 } from '../app/transactions';
+import { useData } from '../app/context';
 
 export function TransactionsList() {
+  const { refreshData } = useData();
   const {
     currentDate,
     goToPreviousMonth,
@@ -33,7 +35,13 @@ export function TransactionsList() {
     filterDateText,
     sortOrder,
     setSortOrder,
+    selectedLabelId,
+    setSelectedLabelId,
+    searchQuery,
+    setSearchQuery,
   } = useTransactionFilters(currentDate);
+
+  const [showSearch, setShowSearch] = useState(false);
 
   const handlePreviousMonth = useCallback(() => {
     if (startDate && endDate) {
@@ -53,7 +61,7 @@ export function TransactionsList() {
     }
   }, [startDate, endDate, clearFilters, resetToCurrentMonth, goToNextMonth]);
 
-  const hasActiveFilters = selectedAccount !== 'all' || !!startDate || !!endDate || sortOrder !== 'desc';
+  const hasActiveFilters = selectedAccount !== 'all' || !!startDate || !!endDate || sortOrder !== 'desc' || selectedLabelId !== null || searchQuery !== '';
 
   return (
     <div className="flex flex-col h-full">
@@ -69,16 +77,46 @@ export function TransactionsList() {
         expense={summary.expense}
         advanced
       />
+
       <div className="px-4 pt-2 pb-0 flex items-center justify-between text-gray-500 dark:text-gray-400 text-xs">
         <span>Últimas transacciones</span>
-        <button
-          onClick={() => setShowFilters(true)}
-          className="flex items-center gap-1 text-blue-600 dark:text-blue-400 text-xs cursor-pointer hover:underline"
-        >
-          <Filter className="w-3.5 h-3.5" />
-          Filtrar
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => refreshData()}
+            className="flex items-center justify-center p-1.5 text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full cursor-pointer transition-colors"
+            title="Cargar"
+          >
+            <RefreshCw className="w-4.5 h-4.5" />
+          </button>
+          <button
+            onClick={() => setShowSearch(!showSearch)}
+            className="flex items-center justify-center p-1.5 text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full cursor-pointer transition-colors"
+            title="Buscar"
+          >
+            <Search className="w-4.5 h-4.5" />
+          </button>
+          <button
+            onClick={() => setShowFilters(true)}
+            className="flex items-center justify-center p-1.5 text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full cursor-pointer transition-colors"
+            title="Filtrar"
+          >
+            <Filter className="w-4.5 h-4.5" />
+          </button>
+        </div>
       </div>
+
+      {showSearch && (
+        <div className="px-4 pt-2">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar por descripción o texto..."
+            className="w-full px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400/40"
+          />
+        </div>
+      )}
+
       <div className="fixed bottom-20 right-4 z-50 flex flex-col">
         <Link
           to="/add"
@@ -102,6 +140,8 @@ export function TransactionsList() {
         onClearFilters={clearFilters}
         sortOrder={sortOrder}
         onSortOrderChange={setSortOrder}
+        selectedLabelId={selectedLabelId}
+        onLabelChange={setSelectedLabelId}
       />
 
       <SwipeableContainer

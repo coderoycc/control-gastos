@@ -76,4 +76,5 @@ export interface DataContextType {
   userSettings: UserSettings | null;
   saveUserSettings: (settings: Omit<UserSettings, 'id'>) => Promise<void>;
   deleteUserSettings: () => Promise<void>;
+  refreshData: () => Promise<void>;
 }
