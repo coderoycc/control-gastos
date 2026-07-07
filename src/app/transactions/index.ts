@@ -4,6 +4,7 @@ export { TransactionCard } from "./components/TransactionCard";
 export { TransactionFilters } from "./components/TransactionFilters";
 export { TransactionForm } from "./components/TransactionForm";
 export { EditTransactionForm } from "./components/EditTransactionForm";
+export { TransactionsList } from "./components/TransactionsList";
 
 export { useMonthNavigation } from "./hooks/useMonthNavigation";
 export { useTransactionFilters } from "./hooks/useTransactionFilters";

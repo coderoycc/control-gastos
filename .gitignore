@@ -3,6 +3,7 @@ dist/
 guidelines/
 .vscode/
 .opencode/
+.agents/
 *.log
 ATTRIBUTIONS.md
 dev-dist/
