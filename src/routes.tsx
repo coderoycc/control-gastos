@@ -9,6 +9,7 @@ import { Reports } from "./pages/Reports";
 import { ReportByAccount } from "./pages/ReportByAccount";
 import { ReportCharts } from "./pages/ReportCharts";
 import { AccountFlow } from "./pages/AccountFlow";
+import { ReportCalendar } from "./pages/ReportCalendar";
 
 export const router = createHashRouter([
   {
@@ -24,6 +25,7 @@ export const router = createHashRouter([
           { path: "by-account", Component: ReportByAccount },
           { path: "charts", Component: ReportCharts },
           { path: "account-flow", Component: AccountFlow },
+          { path: "calendar", Component: ReportCalendar },
         ],
       },
       { path: "add", Component: AddTransaction },

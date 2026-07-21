@@ -104,9 +104,10 @@ export function useReportCharts() {
         }
       });
 
-      return Array.from(tagMap.values())
-        .sort((a, b) => b.value - a.value)
-        .map((item, idx) => ({
+      return Array.from(tagMap.entries())
+        .sort(([, a], [, b]) => b.value - a.value)
+        .map(([id, item], idx) => ({
+          id,
           ...item,
           color: item.color || CHART_COLORS[idx % CHART_COLORS.length],
         }));
@@ -120,9 +121,10 @@ export function useReportCharts() {
         accountMap.set(t.accountId, { ...current, value: current.value + t.amount });
       });
 
-      return Array.from(accountMap.values())
-        .sort((a, b) => b.value - a.value)
-        .map((item, idx) => ({
+      return Array.from(accountMap.entries())
+        .sort(([, a], [, b]) => b.value - a.value)
+        .map(([id, item], idx) => ({
+          id,
           ...item,
           color: CHART_COLORS[idx % CHART_COLORS.length],
         }));
