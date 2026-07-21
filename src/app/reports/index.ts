@@ -12,3 +12,6 @@ export { ChartView } from './components/ChartView';
 export { useReportCharts } from './hooks/useReportCharts';
 export { ReportsLayout } from './components/ReportsLayout';
 export { useReportsDate } from './context/useReportsDate';
+export { CalendarView, type CalendarViewProps } from './components/CalendarView';
+export { useCalendarTransactions } from './hooks/useCalendarTransactions';
+

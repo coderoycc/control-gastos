@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { Link } from 'react-router';
-import { Filter, Plus, Search, RefreshCw, X } from 'lucide-react';
+import { Filter, Plus, Search, Calendar, X } from 'lucide-react';
+import { format } from 'date-fns';
 import { SwipeableContainer, Summary } from '../../../components';
 import { useData } from '../../context';
 import { useMonthNavigation } from '../hooks/useMonthNavigation';
@@ -11,7 +12,7 @@ import { TransactionCard } from './TransactionCard';
 import { TransactionFilters } from './TransactionFilters';
 
 export function TransactionsList() {
-  const { refreshData } = useData();
+  useData();
   const {
     currentDate,
     goToPreviousMonth,
@@ -70,6 +71,25 @@ export function TransactionsList() {
   const hasSearchQuery = searchQuery.trim().length > 0;
   const hasFilterBadge = selectedAccount !== 'all' || !!startDate || !!endDate || sortOrder !== 'desc' || selectedLabelId !== null;
 
+  const getCalendarUrl = () => {
+    const params = new URLSearchParams();
+    if (currentDate) {
+      params.set('month', format(currentDate, 'yyyy-MM'));
+    }
+
+    const hasAccount = selectedAccount && selectedAccount !== 'all';
+    const hasTag = selectedLabelId !== null && selectedLabelId !== undefined;
+
+    if (hasAccount) {
+      params.set('accountId', selectedAccount);
+    } else if (hasTag) {
+      params.set('tagId', String(selectedLabelId));
+    }
+
+    const queryString = params.toString();
+    return queryString ? `/reports/calendar?${queryString}` : '/reports/calendar';
+  };
+
   return (
     <div className="flex flex-col h-full">
       <MonthNavigation
@@ -85,13 +105,13 @@ export function TransactionsList() {
       <div className="px-4 pt-2 pb-0 flex items-center justify-between text-gray-500 dark:text-gray-400 text-xs">
         <span>Ultimas transacciones</span>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => refreshData()}
+          <Link
+            to={getCalendarUrl()}
             className="flex items-center justify-center p-1.5 text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
-            title="Recargar"
+            title="Ver calendario"
           >
-            <RefreshCw className="w-4 h-4" />
-          </button>
+            <Calendar className="w-4 h-4" />
+          </Link>
 
           <button
             onClick={toggleSearch}

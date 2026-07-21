@@ -1,6 +1,7 @@
 export type ChartType = 'pie' | 'bar' | 'line';
 export type GroupDimension = 'tags' | 'accounts' | 'date' | 'type';
 export type FilterType = 'all' | 'entrada' | 'salida';
+export type ViewMode = 'pie' | 'lines' | 'summary';
 
 export const CHART_COLORS = [
   '#6366f1', // Indigo
@@ -16,6 +17,7 @@ export const CHART_COLORS = [
 ];
 
 export interface CategoryChartItem {
+  id?: string;
   name: string;
   value: number;
   color?: string;
