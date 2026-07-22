@@ -38,6 +38,8 @@ export function BottomSheet({ isOpen, onClose, title, children }: BottomSheetPro
     const diff = currentY.current - startY.current;
 
     if (diff > 0 && contentRef.current) {
+      // Prevenir pull-to-refresh nativo del sistema al deslizar hacia abajo
+      e.preventDefault();
       contentRef.current.style.transform = `translateY(${diff}px)`;
     }
   };
@@ -75,18 +77,18 @@ export function BottomSheet({ isOpen, onClose, title, children }: BottomSheetPro
         onTouchEnd={handleTouchEnd}
       >
         {/* Drag Handle */}
-        <div className="flex justify-center pt-3 pb-2">
-          <div className="w-10 h-1 bg-gray-300 dark:bg-gray-700 rounded-full" />
+        <div className="flex justify-center pt-1 pb-1">
+          <div className="w-9 h-1 bg-gray-300 dark:bg-gray-700 rounded-full" />
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-4 pb-3 border-b border-gray-200 dark:border-gray-800">
-          <h3 className="font-medium text-lg">{title}</h3>
+        <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-800">
+          <h3 className="font-semibold text-base leading-tight">{title}</h3>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
