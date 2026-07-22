@@ -330,11 +330,13 @@ export function CalendarView(props: CalendarViewProps = {}) {
           <CalendarTransactionList
             day={selectedDay}
             transactions={dayTransactions}
+            typeParam={typeParam}
             income={dayTotals.income}
             expenses={dayTotals.expenses}
-            balance={dayTotals.balance}
+            transfers={dayTotals.balance}
           />
         )}
+
       </BottomSheet>
     </div>
   );
