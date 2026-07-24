@@ -1,14 +1,14 @@
 import { useState, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { useData, type TransactionType } from '../../context';
 
 export const TRANSACTION_TYPES: TransactionType[] = ['entrada', 'salida', 'transferencia'];
 
 export function useTransactionForm() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { addTransaction, accounts, labels, transferBetweenAccounts } = useData();
 
-  const [type, setType] = useState<TransactionType>('salida');
   const getLocalDateString = () => {
     const now = new Date();
     const year = now.getFullYear();
@@ -16,11 +16,21 @@ export function useTransactionForm() {
     const day = String(now.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
-  const [date, setDate] = useState(getLocalDateString());
-  const [time, setTime] = useState(() => {
+
+  const getLocalTimeString = () => {
     const now = new Date();
     return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-  });
+  };
+
+  const initialType = (): TransactionType => {
+    const param = searchParams.get('type');
+    if (param === 'entrada' || param === 'salida' || param === 'transferencia') return param;
+    return 'salida';
+  };
+
+  const [type, setType] = useState<TransactionType>(initialType);
+  const [date, setDate] = useState(() => searchParams.get('date') || getLocalDateString());
+  const [time, setTime] = useState(() => searchParams.get('time') || getLocalTimeString());
   const [detail, setDetail] = useState('');
   const [amount, setAmount] = useState('');
   const [accountId, setAccountId] = useState(accounts[0]?.id || '');
@@ -70,7 +80,7 @@ export function useTransactionForm() {
   }, []);
 
   const goBack = useCallback(() => {
-    navigate('/');
+    navigate(-1);
   }, [navigate]);
 
   const handleSubmit = useCallback(

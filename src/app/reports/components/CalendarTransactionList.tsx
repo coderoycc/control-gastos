@@ -7,7 +7,6 @@ interface CalendarTransactionListProps {
   typeParam?: 'entrada' | 'salida' | 'transferencia' | null;
   income?: number;
   expenses?: number;
-  transfers?: number;
 }
 
 function formatCurrency(amount: number): string {
@@ -19,19 +18,16 @@ export function CalendarTransactionList({
   typeParam,
   income = 0,
   expenses = 0,
-  transfers = 0,
 }: CalendarTransactionListProps) {
-  // Solo mostrar el total si hay un único tipo de transacción filtrado
-  const showTotal = typeParam === 'entrada' || typeParam === 'salida' || typeParam === 'transferencia';
+  // Solo mostrar el total si hay un único tipo de transacción filtrado y NO es transferencia
+  const showTotal = typeParam === 'entrada' || typeParam === 'salida';
 
-  const totalAmount = typeParam === 'entrada' ? income : typeParam === 'salida' ? expenses : transfers;
+  const totalAmount = typeParam === 'entrada' ? income : expenses;
 
   const totalColorClass =
     typeParam === 'entrada'
       ? 'text-emerald-600 dark:text-emerald-400'
-      : typeParam === 'salida'
-      ? 'text-rose-500 dark:text-rose-400'
-      : 'text-blue-500 dark:text-blue-400';
+      : 'text-rose-500 dark:text-rose-400';
 
   return (
     <div className="flex flex-col h-full">
