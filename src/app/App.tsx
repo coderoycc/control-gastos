@@ -6,6 +6,7 @@ import { useData } from './context';
 import { LockScreen } from './config/components/LockScreen';
 import { useAppLock } from './config/hooks/useAppLock';
 import { UpdatePrompt } from '../components/UpdatePrompt';
+import { Toaster } from '../components/ui/sonner';
 
 function AppContent() {
   const { isLoading } = useData();
@@ -58,6 +59,7 @@ export default function App() {
     <ThemeProvider>
       <DataProvider>
         <AppContent />
+        <Toaster />
         <UpdatePrompt />
       </DataProvider>
     </ThemeProvider>

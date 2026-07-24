@@ -1,8 +1,9 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef } from "react";
 
 interface SmartAmountInputProps {
   value: string;
   onChange: (value: string) => void;
+  onNegativeValue?: (originalValue: number) => void;
   autoFocus?: boolean;
   className?: string;
 }
@@ -12,8 +13,8 @@ interface SmartAmountInputProps {
  * Devuelve null si la expresión es inválida o incompleta
  */
 function evaluateExpression(expr: string): number | null {
-  if (!expr || expr.trim() === '') return null;
-  const sanitized = expr.replace(/\s/g, '');
+  if (!expr || expr.trim() === "") return null;
+  const sanitized = expr.replace(/\s/g, "");
   if (!/^[\d.+\-*]+$/.test(sanitized)) return null;
 
   // Necesita al menos un operador real para mostrar preview
@@ -26,7 +27,7 @@ function evaluateExpression(expr: string): number | null {
   try {
     // eslint-disable-next-line no-new-func
     const result = new Function(`return (${sanitized})`)() as number;
-    if (typeof result !== 'number' || !isFinite(result)) return null;
+    if (typeof result !== "number" || !isFinite(result)) return null;
     return result;
   } catch {
     return null;
@@ -49,6 +50,7 @@ function formatResult(value: number): string {
 export function SmartAmountInput({
   value,
   onChange,
+  onNegativeValue,
   autoFocus,
   className,
 }: SmartAmountInputProps) {
@@ -73,9 +75,14 @@ export function SmartAmountInput({
     setIsFocused(false);
     const result = evaluateExpression(value);
     if (result !== null) {
-      onChange(formatResult(result));
+      if (result < 0) {
+        onNegativeValue?.(result);
+        onChange(formatResult(Math.abs(result)));
+      } else {
+        onChange(formatResult(result));
+      }
     }
-  }, [value, onChange]);
+  }, [value, onChange, onNegativeValue]);
 
   return (
     <div className="relative">
@@ -88,7 +95,7 @@ export function SmartAmountInput({
         ref={inputRef}
         type="text"
         inputMode="decimal"
-        pattern="[0-9]*"
+        // pattern="[0-9]*"
         value={value}
         onChange={handleChange}
         onFocus={() => setIsFocused(true)}

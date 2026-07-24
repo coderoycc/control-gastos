@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useData } from '../../context';
 import { getMonthlyExpensesTotal } from '../utils/limitCalculations';
 
@@ -7,7 +7,6 @@ interface UseSpendingLimitAlertProps {
   date: string;
   type: string;
   excludeId?: string;
-  alertDuration?: number; // en milisegundos, por defecto 4000
 }
 
 export function useSpendingLimitAlert({
@@ -15,13 +14,10 @@ export function useSpendingLimitAlert({
   date,
   type,
   excludeId,
-  alertDuration = 4000,
 }: UseSpendingLimitAlertProps) {
   const { transactions, spendingLimits } = useData();
 
   const [alertType, setAlertType] = useState<'warning_90' | 'danger_100' | null>(null);
-  const [isAlertVisible, setIsAlertVisible] = useState(false);
-  const timeoutRef = useRef<number | null>(null);
 
   // Verificar si la fecha seleccionada corresponde al año y mes actuales del sistema
   const isCurrentMonth = useMemo(() => {
@@ -57,15 +53,10 @@ export function useSpendingLimitAlert({
     return (totalWithCurrent / activeLimit.amount) * 100;
   }, [activeLimit, totalWithCurrent]);
 
-  // Manejar el temporizador y el disparo de la alerta
+  // Actualizar el tipo de alerta cuando se cruza un umbral
   useEffect(() => {
     if (type !== 'salida' || !activeLimit) {
       setAlertType(null);
-      setIsAlertVisible(false);
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
       return;
     }
 
@@ -78,44 +69,8 @@ export function useSpendingLimitAlert({
       nextAlertType = 'warning_90';
     }
 
-    // Se dispara la alerta si cambia el tipo de alerta (se cruza un nuevo umbral)
-    setAlertType(prev => {
-      if (prev !== nextAlertType) {
-        if (nextAlertType) {
-          setIsAlertVisible(true);
-          
-          // Limpiar timeout previo
-          if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-          }
-          
-          // Crear un nuevo timeout para ocultar la alerta después de alertDuration
-          timeoutRef.current = setTimeout(() => {
-            setIsAlertVisible(false);
-            timeoutRef.current = null;
-          }, alertDuration) as unknown as number;
-        } else {
-          setIsAlertVisible(false);
-          if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-            timeoutRef.current = null;
-          }
-        }
-        return nextAlertType;
-      }
-      return prev;
-    });
-
-  }, [totalWithCurrent, activeLimit, type, alertDuration]);
-
-  // Limpiar temporizadores al desmontar el componente
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
+    setAlertType(prev => prev !== nextAlertType ? nextAlertType : prev);
+  }, [totalWithCurrent, activeLimit, type]);
 
   return {
     activeLimit,
@@ -123,7 +78,5 @@ export function useSpendingLimitAlert({
     totalWithCurrent,
     percentage,
     alertType,
-    isAlertVisible,
-    setIsAlertVisible,
   };
 }
