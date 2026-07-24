@@ -21,6 +21,7 @@ import {
   ArrowLeftRight,
   ChevronDown,
   X,
+  Plus,
 } from 'lucide-react';
 import { useCalendarTransactions } from '../hooks/useCalendarTransactions';
 import { CalendarDayCell } from './CalendarDayCell';
@@ -99,6 +100,18 @@ export function CalendarView(props: CalendarViewProps = {}) {
     const key = format(day, 'yyyy-MM-dd');
     if (transactionsByDay[key]?.length > 0) {
       setSelectedDay(day);
+    } else {
+      // Día sin transacciones → navegar al formulario de creación
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      // Si el filtro activo es 'todos' (null), por defecto usar 'salida'
+      const newType = typeParam ?? 'salida';
+      const params = new URLSearchParams({
+        date: key,
+        time: timeStr,
+        type: newType,
+      });
+      navigate(`/add?${params.toString()}`);
     }
   };
 
@@ -129,6 +142,16 @@ export function CalendarView(props: CalendarViewProps = {}) {
   const bottomSheetTitle = selectedDay
     ? format(selectedDay, "d 'de' MMMM", { locale: es })
     : '';
+
+  const handleAddFromBottomSheet = () => {
+    if (!selectedDay) return;
+    const now = new Date();
+    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const dateStr = format(selectedDay, 'yyyy-MM-dd');
+    const newType = typeParam ?? 'salida';
+    const params = new URLSearchParams({ date: dateStr, time: timeStr, type: newType });
+    navigate(`/add?${params.toString()}`);
+  };
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 overflow-hidden">
@@ -325,6 +348,16 @@ export function CalendarView(props: CalendarViewProps = {}) {
         isOpen={selectedDay !== null}
         onClose={() => setSelectedDay(null)}
         title={bottomSheetTitle}
+        headerAction={
+          <button
+            type="button"
+            onClick={handleAddFromBottomSheet}
+            className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600 active:scale-95 transition-all flex-shrink-0"
+            aria-label="Nueva transacción"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        }
       >
         {selectedDay && (
           <CalendarTransactionList
@@ -333,7 +366,6 @@ export function CalendarView(props: CalendarViewProps = {}) {
             typeParam={typeParam}
             income={dayTotals.income}
             expenses={dayTotals.expenses}
-            transfers={dayTotals.balance}
           />
         )}
 

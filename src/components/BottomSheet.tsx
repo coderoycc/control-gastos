@@ -7,6 +7,9 @@ export interface BottomSheetProps {
   title?: string;
   children: React.ReactNode;
   
+  /** Acción adicional en el header (reemplaza el botón X) */
+  headerAction?: React.ReactNode;
+  
   /** Umbral de distancia para cerrar (0.1 a 0.9 es porcentaje de la altura, > 1 es píxeles). Por defecto 0.3 (30%) */
   threshold?: number;
   
@@ -31,6 +34,7 @@ export function BottomSheet({
   onClose,
   title,
   children,
+  headerAction,
   threshold = 0.3,
   sensitivity = 'medium',
   dismissOnBackdropClick = true,
@@ -313,14 +317,16 @@ export function BottomSheet({
         {title && (
           <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
             <h3 className="font-semibold text-base leading-tight text-gray-900 dark:text-gray-100">{title}</h3>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors flex-shrink-0"
-              aria-label="Cerrar"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            {headerAction ?? (
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors flex-shrink-0"
+                aria-label="Cerrar"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
         )}
 

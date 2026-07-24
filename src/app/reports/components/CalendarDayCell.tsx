@@ -1,3 +1,4 @@
+import { Plus } from 'lucide-react';
 import type { Transaction } from '../../context/types';
 
 interface CalendarDayCellProps {
@@ -24,8 +25,9 @@ export function CalendarDayCell({
     <button
       type="button"
       onClick={onClick}
+      disabled={!isCurrentMonth}
       className={`
-        relative flex flex-col items-center justify-center w-full h-full min-h-[46px] rounded-2xl transition-all duration-150 select-none
+        group relative flex flex-col items-center justify-center w-full h-full min-h-[46px] rounded-2xl transition-all duration-150 select-none
         ${isSelected
           ? 'bg-blue-600 text-white shadow-lg ring-2 ring-blue-400 font-bold scale-105 z-10'
           : isToday
@@ -33,8 +35,8 @@ export function CalendarDayCell({
           : isCurrentMonth
           ? hasTransactions
             ? 'text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 cursor-pointer font-semibold'
-            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900/50'
-          : 'text-gray-300 dark:text-gray-700 opacity-40'}
+            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 cursor-pointer'
+          : 'text-gray-300 dark:text-gray-700 opacity-40 cursor-default'}
       `}
     >
       <span className="text-base sm:text-lg leading-none">
@@ -49,6 +51,13 @@ export function CalendarDayCell({
               ? 'bg-white'
               : 'bg-blue-500 dark:bg-blue-400'
           }`}
+        />
+      )}
+
+      {/* Indicador de "agregar" para días sin transacciones del mes actual */}
+      {!hasTransactions && isCurrentMonth && !isSelected && (
+        <Plus
+          className="mt-1 w-2.5 h-2.5 opacity-0 group-hover:opacity-40 transition-opacity text-gray-400 dark:text-gray-500"
         />
       )}
     </button>
