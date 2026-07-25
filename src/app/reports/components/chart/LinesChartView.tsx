@@ -1,6 +1,12 @@
-import { useNavigate } from 'react-router';
-import { format } from 'date-fns';
-import { CategoryChartItem, GroupDimension, FilterType, formatCurrency, CHART_COLORS } from '../../utils/chartUtils';
+import { useNavigate } from "react-router";
+import { format } from "date-fns";
+import {
+  CategoryChartItem,
+  GroupDimension,
+  FilterType,
+  formatCurrency,
+  CHART_COLORS,
+} from "../../utils/chartUtils";
 
 interface LinesChartViewProps {
   categoryData: CategoryChartItem[];
@@ -18,18 +24,18 @@ export function LinesChartView({
   currentDate,
 }: LinesChartViewProps) {
   const navigate = useNavigate();
-  const monthParam = format(currentDate, 'yyyy-MM');
+  const monthParam = format(currentDate, "yyyy-MM");
 
   const handleItemClick = (item: CategoryChartItem) => {
     const params = new URLSearchParams({ month: monthParam });
-    if (dimension === 'tags' && item.id) {
-      params.set('tagId', item.id);
-    } else if (dimension === 'accounts' && item.id) {
-      params.set('accountId', item.id);
+    if (dimension === "tags" && item.id) {
+      params.set("tagId", item.id);
+    } else if (dimension === "accounts" && item.id) {
+      params.set("accountId", item.id);
     }
-    if (filterType !== 'all') {
-      params.set('type', filterType);
-      params.set('transactionType', filterType);
+    if (filterType !== "all") {
+      params.set("type", filterType);
+      params.set("transactionType", filterType);
     }
     navigate(`/reports/calendar?${params.toString()}`);
   };
@@ -37,7 +43,8 @@ export function LinesChartView({
   return (
     <div className="space-y-1">
       <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase mb-3">
-        Top {dimension === 'tags' ? 'categorías' : 'cuentas'} de {filterType === 'salida' ? 'gasto' : 'ingreso'}
+        Top {dimension === "tags" ? "categorías" : "cuentas"} de{" "}
+        {filterType === "salida" ? "gasto" : "ingreso"}
       </p>
       {categoryData.map((item, idx) => {
         const pct = totalSum > 0 ? (item.value / totalSum) * 100 : 0;
@@ -54,7 +61,7 @@ export function LinesChartView({
                   className="w-2 h-2 rounded-full flex-shrink-0"
                   style={{ backgroundColor: color }}
                 />
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 truncate max-w-[55%]">
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 truncate">
                   {item.name}
                 </span>
               </div>
