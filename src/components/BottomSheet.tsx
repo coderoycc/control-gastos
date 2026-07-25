@@ -45,8 +45,11 @@ export function BottomSheet({
   const contentRef = useRef<HTMLDivElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
   
+  const startX = useRef(0);
   const startY = useRef(0);
+  const currentX = useRef(0);
   const currentY = useRef(0);
+  const lastX = useRef(0);
   const lastY = useRef(0);
   const lastTime = useRef(0);
   const velocityY = useRef(0);
@@ -133,8 +136,12 @@ export function BottomSheet({
     const findScrollableParent = (target: HTMLElement | null): HTMLElement | null => {
       let curr = target;
       while (curr && curr !== el) {
-        const overflowY = window.getComputedStyle(curr).overflowY;
-        if ((overflowY === 'auto' || overflowY === 'scroll') && curr.scrollHeight > curr.clientHeight) {
+        const style = window.getComputedStyle(curr);
+        const overflowX = style.overflowX;
+        const overflowY = style.overflowY;
+        const canScrollHorizontally = (overflowX === 'auto' || overflowX === 'scroll') && curr.scrollWidth > curr.clientWidth;
+        const canScrollVertically = (overflowY === 'auto' || overflowY === 'scroll') && curr.scrollHeight > curr.clientHeight;
+        if (canScrollHorizontally || canScrollVertically) {
           return curr;
         }
         curr = curr.parentElement;
@@ -165,7 +172,10 @@ export function BottomSheet({
       rafId.current = null;
     };
 
-    const handleStart = (clientY: number, target: HTMLElement) => {
+    const handleStart = (clientX: number, clientY: number, target: HTMLElement) => {
+      startX.current = clientX;
+      currentX.current = clientX;
+      lastX.current = clientX;
       startY.current = clientY;
       currentY.current = clientY;
       lastY.current = clientY;
@@ -178,7 +188,7 @@ export function BottomSheet({
       if (backdrop) backdrop.style.transition = 'none';
     };
 
-    const handleMove = (clientY: number, e: Event) => {
+    const handleMove = (clientX: number, clientY: number, e: Event) => {
       if (!isDragging.current) return;
       
       const now = performance.now();
@@ -189,13 +199,43 @@ export function BottomSheet({
         velocityY.current = dy / dt; // píxeles por milisegundo
       }
 
+      lastX.current = clientX;
       lastY.current = clientY;
       lastTime.current = now;
+      currentX.current = clientX;
       currentY.current = clientY;
 
-      // Si hay scroll interno en el contenido y no está al inicio, permitir scroll nativo
-      if (scrollableTarget.current && scrollableTarget.current.scrollTop > 0) {
-        return;
+      // Si el touch está sobre un contenedor con scroll horizontal y
+      // el movimiento es predominantemente horizontal → cancelar el drag
+      // del BottomSheet y dejar que el navegador maneje el scroll nativo
+      if (scrollableTarget.current) {
+        const scrollEl = scrollableTarget.current;
+        const canScrollHorizontally = scrollEl.scrollWidth > scrollEl.clientWidth;
+        if (canScrollHorizontally) {
+          const deltaX = currentX.current - startX.current;
+          const deltaY = currentY.current - startY.current;
+          const absX = Math.abs(deltaX);
+          const absY = Math.abs(deltaY);
+          if (absX >= 3 && absX >= absY) {
+            isDragging.current = false;
+            scrollableTarget.current = null;
+            if (contentRef.current) contentRef.current.style.transition = '';
+            if (backdrop) backdrop.style.transition = '';
+            return;
+          }
+        }
+      }
+
+      // Si hay scroll interno activo (vertical u horizontal), permitir scroll nativo
+      if (scrollableTarget.current) {
+        const el = scrollableTarget.current;
+        const canScrollVertically = el.scrollHeight > el.clientHeight;
+        const canScrollHorizontally = el.scrollWidth > el.clientWidth;
+        const isAtHorizontalStart = el.scrollLeft <= 0;
+        const isAtHorizontalEnd = el.scrollWidth - el.clientWidth - el.scrollLeft <= 1;
+
+        if (canScrollVertically && el.scrollTop > 0) return;
+        if (canScrollHorizontally && !isAtHorizontalStart && !isAtHorizontalEnd) return;
       }
 
       const diff = currentY.current - startY.current;
@@ -227,7 +267,18 @@ export function BottomSheet({
       // Cerrar si superó el umbral o si fue un swipe/flick rápido hacia abajo
       const isFlick = velocityY.current > velocityThreshold;
       const isPastThreshold = diff > closeThresholdPx;
-      const canClose = (!scrollableTarget.current || scrollableTarget.current.scrollTop <= 0);
+      const canClose = (() => {
+        if (!scrollableTarget.current) return true;
+        const el = scrollableTarget.current;
+        const canScrollVertically = el.scrollHeight > el.clientHeight;
+        const canScrollHorizontally = el.scrollWidth > el.clientWidth;
+        const isAtHorizontalStart = el.scrollLeft <= 0;
+        const isAtHorizontalEnd = el.scrollWidth - el.clientWidth - el.scrollLeft <= 1;
+
+        if (canScrollVertically && el.scrollTop > 0) return false;
+        if (canScrollHorizontally && !isAtHorizontalStart && !isAtHorizontalEnd) return false;
+        return true;
+      })();
 
       el.style.transition = 'transform 300ms cubic-bezier(0.32, 0.72, 0, 1)';
       if (backdrop) backdrop.style.transition = 'opacity 300ms cubic-bezier(0.32, 0.72, 0, 1)';
@@ -245,16 +296,16 @@ export function BottomSheet({
     };
 
     // Listeners táctiles (Móviles)
-    const onTouchStart = (e: TouchEvent) => handleStart(e.touches[0].clientY, e.target as HTMLElement);
-    const onTouchMove = (e: TouchEvent) => handleMove(e.touches[0].clientY, e);
+    const onTouchStart = (e: TouchEvent) => handleStart(e.touches[0].clientX, e.touches[0].clientY, e.target as HTMLElement);
+    const onTouchMove = (e: TouchEvent) => handleMove(e.touches[0].clientX, e.touches[0].clientY, e);
     const onTouchEnd = () => handleEnd();
 
     // Listeners de ratón (Escritorio)
     const onMouseDown = (e: MouseEvent) => {
       if (e.button !== 0) return; // Solo botón primario
-      handleStart(e.clientY, e.target as HTMLElement);
+      handleStart(e.clientX, e.clientY, e.target as HTMLElement);
       
-      const onMouseMove = (me: MouseEvent) => handleMove(me.clientY, me);
+      const onMouseMove = (me: MouseEvent) => handleMove(me.clientX, me.clientY, me);
       const onMouseUp = () => {
         handleEnd();
         window.removeEventListener('mousemove', onMouseMove);

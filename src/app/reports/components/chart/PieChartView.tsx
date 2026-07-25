@@ -1,8 +1,12 @@
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
-import { format } from 'date-fns';
-import { CalendarDays } from 'lucide-react';
+import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns';
+import { CalendarDays, List } from 'lucide-react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Sector } from 'recharts';
 import { CategoryChartItem, GroupDimension, FilterType, formatCurrency, CHART_COLORS } from '../../utils/chartUtils';
+import { useData } from '../../../context';
+import { BottomSheet } from '../../../../components';
+import { CalendarTransactionList } from '../CalendarTransactionList';
 
 interface PieChartViewProps {
   categoryData: CategoryChartItem[];
@@ -43,6 +47,49 @@ export function PieChartView({
 }: PieChartViewProps) {
   const navigate = useNavigate();
   const monthParam = format(currentDate, 'yyyy-MM');
+  const { transactions } = useData();
+
+  const [isListOpen, setIsListOpen] = useState(false);
+
+  const listTransactions = useMemo(() => {
+    if (activeIndex === null) return [];
+    const item = categoryData[activeIndex];
+    if (!item) return [];
+
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(currentDate);
+    const monthStartTime = monthStart.getTime();
+    const monthEndTime = monthEnd.getTime();
+
+    return transactions.filter(tx => {
+      const txDate = parseISO(tx.date);
+      const txTime = txDate.getTime();
+      if (txTime < monthStartTime || txTime > monthEndTime) return false;
+
+      if (dimension === 'tags' && item.id) {
+        if (item.id === 'no-tag' || item.id === '__none__') {
+          if (tx.labels && tx.labels.length > 0) return false;
+        } else if (!tx.labels?.includes(item.id)) {
+          return false;
+        }
+      } else if (dimension === 'accounts' && item.id) {
+        if (tx.accountId !== item.id && tx.toAccountId !== item.id) return false;
+      }
+
+      if (filterType !== 'all' && tx.type !== filterType) return false;
+
+      return true;
+    });
+  }, [transactions, activeIndex, categoryData, currentDate, dimension, filterType]);
+
+  const listIncome = useMemo(
+    () => listTransactions.filter(tx => tx.type === 'entrada').reduce((sum, tx) => sum + tx.amount, 0),
+    [listTransactions],
+  );
+  const listExpenses = useMemo(
+    () => listTransactions.filter(tx => tx.type === 'salida').reduce((sum, tx) => sum + tx.amount, 0),
+    [listTransactions],
+  );
 
   const handleViewCalendar = () => {
     if (activeIndex === null) return;
@@ -91,20 +138,34 @@ export function PieChartView({
         </ResponsiveContainer>
       </div>
 
-      {/* Botón "Ver transacciones" — aparece al seleccionar una categoría */}
+      {/* Botones "Ver listado" y "Ver en calendario" — aparecen al seleccionar una categoría */}
       {activeItem && (
-        <button
-          onClick={handleViewCalendar}
-          className="w-full mt-2 mb-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-95"
-          style={{
-            backgroundColor: `${activeItem.color || '#6366f1'}18`,
-            color: activeItem.color || '#6366f1',
-            border: `1.5px solid ${activeItem.color || '#6366f1'}40`,
-          }}
-        >
-          <CalendarDays className="w-4 h-4" />
-          Ver transacciones de &ldquo;{activeItem.name}&rdquo;
-        </button>
+        <div className="mt-2 mb-1 flex gap-2">
+          <button
+            onClick={() => setIsListOpen(true)}
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all duration-200 active:scale-95"
+            style={{
+              backgroundColor: `${activeItem.color || '#6366f1'}18`,
+              color: activeItem.color || '#6366f1',
+              border: `1.5px solid ${activeItem.color || '#6366f1'}40`,
+            }}
+          >
+            <List className="w-3.5 h-3.5" />
+            Ver listado
+          </button>
+          <button
+            onClick={handleViewCalendar}
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all duration-200 active:scale-95"
+            style={{
+              backgroundColor: `${activeItem.color || '#6366f1'}18`,
+              color: activeItem.color || '#6366f1',
+              border: `1.5px solid ${activeItem.color || '#6366f1'}40`,
+            }}
+          >
+            <CalendarDays className="w-3.5 h-3.5" />
+            Ver en calendario
+          </button>
+        </div>
       )}
 
       {/* Leyenda interactiva */}
@@ -160,6 +221,22 @@ export function PieChartView({
           );
         })}
       </div>
+
+      {activeItem && (
+        <BottomSheet
+          isOpen={isListOpen}
+          onClose={() => setIsListOpen(false)}
+          title={`Transacciones de "${activeItem.name}"`}
+        >
+          <CalendarTransactionList
+            day={currentDate}
+            transactions={listTransactions}
+            typeParam={filterType !== 'all' ? filterType : null}
+            income={listIncome}
+            expenses={listExpenses}
+          />
+        </BottomSheet>
+      )}
     </div>
   );
 }
