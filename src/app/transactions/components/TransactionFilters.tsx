@@ -128,7 +128,7 @@ export function TransactionFilters({
   const displayEnd = localRange?.to ? formatDateString(localRange.to) : '';
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={onClose} title="Filtros">
+    <BottomSheet isOpen={isOpen} onClose={onClose} title="Filtros" sensitivity="low" threshold={0.35}>
       <div className="p-4 space-y-4">
         <div>
           <label className="block text-sm mb-2 text-gray-700 dark:text-gray-300 font-medium">
@@ -151,7 +151,7 @@ export function TransactionFilters({
         {/* Label filter — horizontal scroll row */}
         <div>
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Etiqueta</p>
-          <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar" style={{ scrollbarWidth: 'none', touchAction: 'pan-x' }}>
             {/* "Todas" chip */}
             <button
               type="button"

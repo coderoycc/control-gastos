@@ -1,14 +1,14 @@
-import { useState } from 'react';
-import { useReportCharts } from '../hooks/useReportCharts';
-import { ViewMode } from '../utils/chartUtils';
-import { MonthSelector } from './chart/MonthSelector';
-import { DimensionSelector } from './chart/DimensionSelector';
-import { TypeFilterSelector } from './chart/TypeFilterSelector';
-import { ViewModeDropdown } from './chart/ViewModeDropdown';
-import { EmptyChartState } from './chart/EmptyChartState';
-import { PieChartView } from './chart/PieChartView';
-import { LinesChartView } from './chart/LinesChartView';
-import { SummaryChartView } from './chart/SummaryChartView';
+import { useState } from "react";
+import { useReportCharts } from "../hooks/useReportCharts";
+import { ViewMode } from "../utils/chartUtils";
+import { MonthSelector } from "./chart/MonthSelector";
+import { DimensionSelector } from "./chart/DimensionSelector";
+import { TypeFilterSelector } from "./chart/TypeFilterSelector";
+import { ViewModeDropdown } from "./chart/ViewModeDropdown";
+import { EmptyChartState } from "./chart/EmptyChartState";
+import { PieChartView } from "./chart/PieChartView";
+import { LinesChartView } from "./chart/LinesChartView.tsx";
+import { SummaryChartView } from "./chart/SummaryChartView";
 
 export function ChartView() {
   const {
@@ -26,7 +26,7 @@ export function ChartView() {
     handleNextMonth,
   } = useReportCharts();
 
-  const [viewMode, setViewMode] = useState<ViewMode>('pie');
+  const [viewMode, setViewMode] = useState<ViewMode>("pie");
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const totalSum = categoryData.reduce((acc, item) => acc + item.value, 0);
 
@@ -44,7 +44,7 @@ export function ChartView() {
       <div
         ref={summaryRef}
         className="flex-1 overflow-auto p-4 space-y-3"
-        style={{ touchAction: 'pan-y' }}
+        style={{ touchAction: "pan-y" }}
       >
         {/* ── MENÚ PRINCIPAL: Etiquetas / Cuentas ─────────────────── */}
         <DimensionSelector
@@ -64,10 +64,12 @@ export function ChartView() {
           <div className="px-4 pt-4 pb-3 flex items-center justify-between">
             <div>
               <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">
-                {dimension === 'tags' ? 'Por Etiquetas' : 'Por Cuentas'}
+                {dimension === "tags" ? "Por Etiquetas" : "Por Cuentas"}
               </h3>
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                {filterType === 'salida' ? 'Gastos · Salidas' : 'Ingresos · Entradas'}
+                {filterType === "salida"
+                  ? "Gastos · Salidas"
+                  : "Ingresos · Entradas"}
               </p>
             </div>
 
@@ -85,7 +87,7 @@ export function ChartView() {
           <div className="p-4">
             {!hasData ? (
               <EmptyChartState filterType={filterType} />
-            ) : viewMode === 'pie' ? (
+            ) : viewMode === "pie" ? (
               <PieChartView
                 categoryData={categoryData}
                 totalSum={totalSum}
@@ -95,7 +97,7 @@ export function ChartView() {
                 dimension={dimension}
                 filterType={filterType}
               />
-            ) : viewMode === 'lines' ? (
+            ) : viewMode === "lines" ? (
               <LinesChartView
                 categoryData={categoryData}
                 totalSum={totalSum}
