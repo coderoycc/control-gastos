@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
+import { toast } from 'sonner';
 import { useData, type TransactionType } from '../../context';
 
 export const TRANSACTION_TYPES: TransactionType[] = ['entrada', 'salida', 'transferencia'];
@@ -120,7 +121,8 @@ export function useTransactionForm() {
         });
       }
 
-      navigate('/');
+      toast.success('Transacción guardada', { duration: 2000 });
+      navigate(-1);
     },
     [type, date, time, detail, amount, accountId, toAccountId, selectedLabels, addTransaction, transferBetweenAccounts, navigate]
   );
