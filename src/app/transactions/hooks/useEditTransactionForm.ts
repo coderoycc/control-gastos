@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';
+import { toast } from 'sonner';
 import { useData, type TransactionType } from '../../context';
 
 export const TRANSACTION_TYPES: TransactionType[] = ['entrada', 'salida', 'transferencia'];
@@ -135,6 +136,7 @@ export function useEditTransactionForm() {
         });
       }
 
+      toast.success('Transacción actualizada', { duration: 2000 });
       navigate(-1);
     },
     [
