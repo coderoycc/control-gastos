@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 import { useData, type TransactionType } from '../../context';
@@ -28,6 +28,9 @@ export function useEditTransactionForm() {
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  // flag para saber si la navegación ya fue disparada manualmente
+  const navigatedRef = useRef(false);
+
   useEffect(() => {
     if (id) {
       const transaction = getTransactionById(id);
@@ -40,8 +43,10 @@ export function useEditTransactionForm() {
         setAccountId(transaction.accountId);
         setToAccountId((transaction as any).toAccountId || '');
         setSelectedLabels(transaction.labels || []);
-        } else {
-        navigate(-1);
+      } else {
+        if (!navigatedRef.current) {
+          navigate(-1);
+        }
       }
     }
   }, [id, getTransactionById, navigate]);
@@ -136,6 +141,7 @@ export function useEditTransactionForm() {
         });
       }
 
+      navigatedRef.current = true;
       toast.success('Transacción actualizada', { duration: 2000 });
       navigate(-1);
     },
@@ -147,7 +153,9 @@ export function useEditTransactionForm() {
 
   const handleDelete = useCallback(() => {
     if (id) {
+      navigatedRef.current = true;
       deleteTransaction(id);
+      toast.success('Transacción eliminada', { duration: 2000 });
       navigate(-1);
     }
   }, [id, deleteTransaction, navigate]);
