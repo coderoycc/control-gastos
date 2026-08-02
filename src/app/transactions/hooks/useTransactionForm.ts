@@ -90,7 +90,7 @@ export function useTransactionForm() {
 
       if (type === 'transferencia') {
         if (!amount || !accountId || !toAccountId) {
-          alert('Por favor completa los campos de monto y ambas cuentas');
+          toast.error('Por favor completa los campos de monto y ambas cuentas');
           return;
         }
         const transferAmount = parseFloat(amount);
@@ -107,7 +107,7 @@ export function useTransactionForm() {
         transferBetweenAccounts(accountId, toAccountId, transferAmount);
       } else {
         if (!detail || !amount || !accountId) {
-          alert('Por favor completa todos los campos');
+          toast.error('Por favor completa todos los campos');
           return;
         }
         addTransaction({

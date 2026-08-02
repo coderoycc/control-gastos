@@ -89,7 +89,6 @@ export function SmartAmountInput({
       {/*
        * type="text"           → permite caracteres +, -, *
        * inputMode="decimal"   → teclado numérico con decimal en iOS/Android
-       * pattern="[0-9]*"      → fallback para iOS Safari < 12.2
        */}
       <input
         ref={inputRef}
