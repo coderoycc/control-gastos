@@ -1,16 +1,16 @@
-import { TransactionCard } from '../../transactions';
-import type { Transaction } from '../../context/types';
+import { TransactionCard } from "../../transactions";
+import type { Transaction } from "../../context/types";
 
 interface CalendarTransactionListProps {
   day: Date;
   transactions: Transaction[];
-  typeParam?: 'entrada' | 'salida' | 'transferencia' | null;
+  typeParam?: "entrada" | "salida" | "transferencia" | null;
   income?: number;
   expenses?: number;
 }
 
 function formatCurrency(amount: number): string {
-  return `$${Math.abs(amount).toLocaleString('es', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+  return `$${Math.abs(amount).toLocaleString("es", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
 
 export function CalendarTransactionList({
@@ -19,22 +19,25 @@ export function CalendarTransactionList({
   income = 0,
   expenses = 0,
 }: CalendarTransactionListProps) {
-  // Solo mostrar el total si hay un único tipo de transacción filtrado y NO es transferencia
-  const showTotal = typeParam === 'entrada' || typeParam === 'salida';
+  // solo mostrar cuando hay un tipo unico en el listado (entradas o salidas)
+  const showTotal =
+    (income == 0 && expenses > 0) || (income > 0 && expenses == 0);
 
-  const totalAmount = typeParam === 'entrada' ? income : expenses;
+  const totalAmount = typeParam === "entrada" ? income : expenses;
 
   const totalColorClass =
-    typeParam === 'entrada'
-      ? 'text-emerald-600 dark:text-emerald-400'
-      : 'text-rose-500 dark:text-rose-400';
+    typeParam === "entrada"
+      ? "text-emerald-600 dark:text-emerald-400"
+      : "text-rose-500 dark:text-rose-400";
 
   return (
     <div className="flex flex-col h-full">
       {/* Barra de total — visible solo con un tipo filtrado */}
       {showTotal && (
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/30">
-          <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">Total</span>
+        <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2.5 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+          <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+            Total
+          </span>
           <span className={`text-sm font-bold ${totalColorClass}`}>
             {formatCurrency(totalAmount)}
           </span>
@@ -48,7 +51,7 @@ export function CalendarTransactionList({
             No hay transacciones este día
           </p>
         ) : (
-          transactions.map(tx => (
+          transactions.map((tx) => (
             <TransactionCard key={tx.id} transaction={tx} />
           ))
         )}
