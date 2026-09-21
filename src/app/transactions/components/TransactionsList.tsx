@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { Link } from 'react-router';
-import { Filter, Plus, Search, Calendar, X } from 'lucide-react';
+import { Filter, Plus, Search, Calendar, Upload, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { SwipeableContainer, Summary } from '../../../components';
 import { useData } from '../../context';
@@ -105,6 +105,14 @@ export function TransactionsList() {
       <div className="px-4 pt-2 pb-0 flex items-center justify-between text-gray-500 dark:text-gray-400 text-xs">
         <span>Ultimas transacciones</span>
         <div className="flex items-center gap-2">
+          <Link
+            to="/import"
+            className="flex items-center justify-center p-1.5 text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+            title="Importar extracto bancario PDF"
+          >
+            <Upload className="w-4 h-4" />
+          </Link>
+
           <Link
             to={getCalendarUrl()}
             className="flex items-center justify-center p-1.5 text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
