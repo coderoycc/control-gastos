@@ -12,6 +12,7 @@ const NOISE_LINE_PATTERNS = [
   /^(saldo\s*anterior|saldo\s*inicial|saldo\s*final|saldo\s*disponible|saldo\s*contable)/i,
   /^(banco\s*nacional\s*de\s*bolivia|banco\s*mercantil|banco\s*de\s*cr[eé]dito|banco\s*uni[oó]n|banco\s*ganadero|banco\s*bisa|banco\s*sol|banco\s*econ[oó]mico)/i,
   /^[-=_*#\s]{4,}$/, // Separadores visuales
+  /^(\s*[-+]?\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?\s*){2,}$/, // Resúmenes de saldos/balances puramente numéricos
 ];
 
 /**
@@ -113,7 +114,6 @@ export function parseMovementBlock(blockText: string): RawParsedMovement | null 
   }
 
   // Buscar todos los números compatibles con montos al final o dentro de la línea
-  // Normalmente los últimos 1 o 2 tokens numéricos son [Monto] o [Monto, Saldo]
   const tokens = remainder.split(/\s+/);
   if (tokens.length === 0) {
     return {
@@ -149,14 +149,28 @@ export function parseMovementBlock(blockText: string): RawParsedMovement | null 
   let descTokens: string[] = [];
   let documento: string | undefined;
 
-  if (numericSuffixes.length >= 2) {
+  if (numericSuffixes.length >= 3) {
+    // Formato [Débito, Crédito, Saldo]: el último es saldo, el anterior crédito, y el primero débito
+    const debito = numericSuffixes[numericSuffixes.length - 3].valueNum;
+    const credito = numericSuffixes[numericSuffixes.length - 2].valueNum;
+    saldo = numericSuffixes[numericSuffixes.length - 1].valueNum;
+    if (credito > 0) {
+      monto = credito;
+    } else if (debito > 0) {
+      monto = -Math.abs(debito);
+    } else {
+      monto = debito !== 0 ? debito : credito;
+    }
+    const splitIndex = numericSuffixes[numericSuffixes.length - 3].index;
+    descTokens = tokens.slice(0, splitIndex);
+  } else if (numericSuffixes.length === 2) {
     // El penúltimo es monto y el último es saldo
     monto = numericSuffixes[numericSuffixes.length - 2].valueNum;
     saldo = numericSuffixes[numericSuffixes.length - 1].valueNum;
     const splitIndex = numericSuffixes[numericSuffixes.length - 2].index;
     descTokens = tokens.slice(0, splitIndex);
   } else if (numericSuffixes.length === 1) {
-    // Solo se detectó monto
+    // Solo se detectó monto (la columna Saldo fue excluida o no está presente)
     monto = numericSuffixes[0].valueNum;
     descTokens = tokens.slice(0, numericSuffixes[0].index);
   } else {
@@ -171,7 +185,7 @@ export function parseMovementBlock(blockText: string): RawParsedMovement | null 
     descTokens = tokens;
   }
 
-  // Si entre los últimos tokens de descripción hay un número de documento (ej: "646534" o "DOC: 1234")
+  // Si entre los últimos tokens de descripción hay un número de documento (ej: "646534" o "5742431970")
   if (descTokens.length > 0) {
     const lastToken = descTokens[descTokens.length - 1];
     if (/^\d{4,12}$/.test(lastToken)) {
@@ -211,8 +225,16 @@ export function parseBankStatement(source: string | string[]): ParseResult {
     const line = lines[i].trim();
     if (!line) continue;
 
-    // Verificar si es una línea de ruido
+    // Verificar si es una línea de ruido (cabeceras, resúmenes, totales)
     if (isNoiseLine(line)) {
+      // Cerrar inmediatamente el movimiento anterior para no contaminarlo con totales o balances
+      if (currentMovementBlock) {
+        const parsed = parseMovementBlock(currentMovementBlock);
+        if (parsed) {
+          rawMovements.push(parsed);
+        }
+        currentMovementBlock = null;
+      }
       continue;
     }
 
@@ -226,7 +248,7 @@ export function parseBankStatement(source: string | string[]): ParseResult {
       }
       currentMovementBlock = line;
     } else if (currentMovementBlock) {
-      // Línea de continuación (descripción multilínea o saldo en línea siguiente)
+      // Línea de continuación (descripción multilínea)
       currentMovementBlock += ` ${line}`;
     }
   }

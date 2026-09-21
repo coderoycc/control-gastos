@@ -3,7 +3,7 @@ import { X } from "lucide-react";
 interface SpendingLimitModalProps {
   isOpen: boolean;
   onClose: () => void;
-  activeLimit: { amount: number };
+  activeLimit?: { amount: number } | null;
   monthlyExpensesTotalWithoutCurrent: number;
   amount: string;
   totalWithCurrent: number;
