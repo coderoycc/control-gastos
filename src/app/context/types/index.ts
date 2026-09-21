@@ -51,6 +51,7 @@ export interface DataContextType {
   labels: Label[];
   spendingLimits: SpendingLimit[];
   addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
+  addTransactionsBatch: (transactions: Omit<Transaction, 'id'>[]) => Promise<void>;
   updateTransaction: (id: string, transaction: Omit<Transaction, 'id'>) => void;
   deleteTransaction: (id: string) => void;
   addAccount: (account: Omit<Account, 'id'>) => void;
