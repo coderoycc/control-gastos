@@ -48,17 +48,17 @@ export function LinesChartView({
             onClick={() => handleItemClick(item)}
             className="w-full py-2 text-left rounded-xl px-2 -mx-2 transition-all duration-150 hover:bg-gray-50 dark:hover:bg-gray-800/50 active:scale-[0.98] active:bg-gray-100 dark:active:bg-gray-800"
           >
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="flex items-center gap-2">
+            <div className="flex items-start justify-between gap-3 mb-1.5">
+              <div className="flex items-start gap-2 min-w-0 flex-1">
                 <span
-                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5"
                   style={{ backgroundColor: color }}
                 />
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 truncate max-w-[55%]">
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 break-words leading-snug">
                   {item.name}
                 </span>
               </div>
-              <span className="text-sm font-bold text-gray-900 dark:text-white">
+              <span className="text-sm font-bold text-gray-900 dark:text-white flex-shrink-0 whitespace-nowrap text-right pt-0.5">
                 {formatCurrency(item.value)}
               </span>
             </div>

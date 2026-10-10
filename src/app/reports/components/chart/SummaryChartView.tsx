@@ -92,12 +92,12 @@ export function SummaryChartView({
               onClick={() => handleItemClick(item)}
               className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/40 active:bg-gray-100 dark:active:bg-gray-800 active:scale-[0.99] transition-all duration-150 text-left"
             >
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-start gap-2.5 min-w-0 flex-1 pr-3">
                 <span
-                  className="w-3 h-3 rounded-full flex-shrink-0"
+                  className="w-3 h-3 rounded-full flex-shrink-0 mt-1"
                   style={{ backgroundColor: color }}
                 />
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 truncate max-w-[140px]">
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 break-words leading-snug">
                   {item.name}
                 </span>
               </div>

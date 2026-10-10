@@ -178,7 +178,7 @@ export function PieChartView({
             <button
               key={idx}
               onClick={() => onActiveIndexChange(isActive ? null : idx)}
-              className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-xl transition-all duration-200 ${
+              className={`w-full flex items-start gap-2 px-2.5 py-2 rounded-xl transition-all duration-200 ${
                 isActive
                   ? 'bg-gray-100 dark:bg-gray-800 ring-2 ring-offset-1 ring-gray-300 dark:ring-gray-600'
                   : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 active:bg-gray-100 dark:active:bg-gray-800'
@@ -186,12 +186,12 @@ export function PieChartView({
             >
               <span
                 className={`rounded-full flex-shrink-0 transition-all duration-200 ${
-                  isActive ? 'w-3.5 h-3.5 ring-2 ring-offset-1 ring-gray-400 dark:ring-gray-500' : 'w-2.5 h-2.5'
+                  isActive ? 'w-3.5 h-3.5 ring-2 ring-offset-1 ring-gray-400 dark:ring-gray-500 mt-0.5' : 'w-2.5 h-2.5 mt-1'
                 }`}
                 style={{ backgroundColor: color }}
               />
               <span
-                className={`flex-1 text-left text-xs truncate transition-all duration-200 ${
+                className={`flex-1 text-left text-xs break-words leading-snug transition-all duration-200 ${
                   isActive
                     ? 'font-bold text-gray-900 dark:text-white'
                     : 'font-medium text-gray-500 dark:text-gray-400'
@@ -200,7 +200,7 @@ export function PieChartView({
                 {item.name}
               </span>
               <span
-                className={`text-xs tabular-nums transition-all duration-200 ${
+                className={`text-xs tabular-nums transition-all duration-200 flex-shrink-0 whitespace-nowrap pt-0.5 ${
                   isActive
                     ? 'font-bold text-gray-900 dark:text-white'
                     : 'font-semibold text-gray-600 dark:text-gray-300'
@@ -209,7 +209,7 @@ export function PieChartView({
                 {formatCurrency(item.value)}
               </span>
               <span
-                className={`text-xs tabular-nums min-w-[3rem] text-right transition-all duration-200 ${
+                className={`text-xs tabular-nums min-w-[3rem] text-right transition-all duration-200 flex-shrink-0 whitespace-nowrap pt-0.5 ${
                   isActive
                     ? 'font-bold text-gray-700 dark:text-gray-200'
                     : 'text-gray-400 dark:text-gray-500'

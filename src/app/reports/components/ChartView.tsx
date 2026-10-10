@@ -7,7 +7,7 @@ import { TypeFilterSelector } from "./chart/TypeFilterSelector";
 import { ViewModeDropdown } from "./chart/ViewModeDropdown";
 import { EmptyChartState } from "./chart/EmptyChartState";
 import { PieChartView } from "./chart/PieChartView";
-import { LinesChartView } from "./chart/LinesChartView.tsx";
+import { LinesChartView } from "./chart/LinesChartView";
 import { SummaryChartView } from "./chart/SummaryChartView";
 
 export function ChartView() {
