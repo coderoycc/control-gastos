@@ -56,6 +56,20 @@ export function useAccounts(
 		[setAccounts],
 	);
 
+	const setAccountExactBalance = useCallback(
+		(accountId: string, exactAmount: number) => {
+			setAccounts((prev) => {
+				const updated = prev.map((a) =>
+					a.id === accountId ? { ...a, balance: exactAmount } : a,
+				);
+				const affected = updated.find((a) => a.id === accountId);
+				if (affected) accountRepo.put(affected).catch(console.error);
+				return updated;
+			});
+		},
+		[setAccounts],
+	);
+
 	const transferBetweenAccounts = useCallback(
 		(fromAccountId: string, toAccountId: string, amount: number) => {
 			setAccounts((prev) => {
@@ -83,6 +97,7 @@ export function useAccounts(
 		deleteAccount,
 		getAccountById,
 		adjustBalance,
+		setAccountExactBalance,
 		transferBetweenAccounts,
 	};
 }

@@ -37,6 +37,10 @@ export function useTransactionForm() {
   const [accountId, setAccountId] = useState(accounts[0]?.id || '');
   const [toAccountId, setToAccountId] = useState(accounts[1]?.id || '');
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
+  const [channel, setChannel] = useState<import('../../context/types').SalesChannel | undefined>(
+    () => (searchParams.get('channel') as import('../../context/types').SalesChannel) || undefined
+  );
+  const [isPending, setIsPending] = useState(false);
 
   const filteredLabels = useMemo(
     () =>
@@ -118,13 +122,15 @@ export function useTransactionForm() {
           amount: parseFloat(amount),
           accountId,
           labels: selectedLabels,
+          channel: type === 'entrada' ? channel : undefined,
+          isPending: type === 'entrada' ? isPending : undefined,
         });
       }
 
-      toast.success('Transacción guardada', { duration: 2000 });
+      toast.success(type === 'entrada' ? 'Venta registrada con éxito' : 'Transacción guardada', { duration: 2000 });
       navigate(-1);
     },
-    [type, date, time, detail, amount, accountId, toAccountId, selectedLabels, addTransaction, transferBetweenAccounts, navigate]
+    [type, date, time, detail, amount, accountId, toAccountId, selectedLabels, channel, isPending, addTransaction, transferBetweenAccounts, navigate]
   );
 
   return {
@@ -137,6 +143,8 @@ export function useTransactionForm() {
     accountId,
     toAccountId,
     selectedLabels,
+    channel,
+    isPending,
     // Derived
     filteredLabels,
     accounts,
@@ -148,6 +156,8 @@ export function useTransactionForm() {
     setAmount,
     setAccountId,
     setToAccountId,
+    setChannel,
+    setIsPending,
     // Actions
     toggleLabel,
     cycleType,

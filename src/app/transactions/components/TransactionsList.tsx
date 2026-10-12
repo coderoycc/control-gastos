@@ -10,6 +10,8 @@ import { useTransactionSearch } from '../hooks/useTransactionSearch';
 import { MonthNavigation } from './MonthNavigation';
 import { TransactionCard } from './TransactionCard';
 import { TransactionFilters } from './TransactionFilters';
+import { TotalBalanceCard } from './TotalBalanceCard';
+import { SalesPaceCard } from './SalesPaceCard';
 
 export function TransactionsList() {
   useData();
@@ -39,6 +41,8 @@ export function TransactionsList() {
     setSelectedLabelId,
     searchQuery,
     setSearchQuery,
+    onlyPending,
+    setOnlyPending,
   } = useTransactionFilters(currentDate);
 
   const {
@@ -92,6 +96,13 @@ export function TransactionsList() {
 
   return (
     <div className="flex flex-col h-full">
+      {/* 1. Tarjeta de Dinero Total Disponible y Arqueo */}
+      <TotalBalanceCard onFilterPending={() => setOnlyPending(true)} />
+
+      {/* 2. Ritmo de Ventas (Hoy vs Mes) con accesos rápidos */}
+      <SalesPaceCard currentDate={currentDate} />
+
+      {/* 3. Navegación por mes y Resumen de Entradas / Gastos */}
       <MonthNavigation
         currentDate={currentDate}
         onPreviousMonth={handlePreviousMonth}
@@ -100,6 +111,19 @@ export function TransactionsList() {
       />
 
       <Summary income={summary.income} expense={summary.expense} advanced />
+
+      {/* Banner si está filtrado por solo pendientes */}
+      {onlyPending && (
+        <div className="mx-4 mt-2 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 flex items-center justify-between text-xs text-amber-800 dark:text-amber-200">
+          <span className="font-medium">⏳ Mostrando solo ventas pendientes de cobro</span>
+          <button
+            onClick={() => setOnlyPending(false)}
+            className="font-bold underline ml-2 text-amber-900 dark:text-amber-100 hover:opacity-80"
+          >
+            Ver todas
+          </button>
+        </div>
+      )}
 
       {/* Barra de acciones */}
       <div className="px-4 pt-2 pb-0 flex items-center justify-between text-gray-500 dark:text-gray-400 text-xs">
@@ -203,13 +227,22 @@ export function TransactionsList() {
         </div>
       )}
 
-      <div className="fixed bottom-20 right-4 z-50 flex flex-col">
+      <div className="fixed bottom-20 right-4 z-50 flex items-center gap-2">
         <Link
-          to="/add"
-          className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 dark:bg-blue-500 text-white shadow-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-all hover:scale-110 active:scale-95"
-          aria-label="Agregar transaccion"
+          to="/add?type=salida"
+          className="flex items-center justify-center w-8 h-8 rounded-full bg-red-600/90 dark:bg-red-500/90 text-white shadow-md hover:bg-red-700 transition-all hover:scale-105 active:scale-95"
+          aria-label="Registrar gasto"
+          title="Registrar gasto"
+        >
+          <span className="text-base font-bold leading-none">-</span>
+        </Link>
+        <Link
+          to="/add?type=entrada"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-emerald-600 dark:bg-emerald-500 text-white shadow-lg hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-all hover:scale-105 active:scale-95 text-xs font-bold"
+          aria-label="Registrar venta"
         >
           <Plus className="w-4 h-4" />
+          <span>Venta</span>
         </Link>
       </div>
 

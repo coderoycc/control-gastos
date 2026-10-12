@@ -26,6 +26,8 @@ export function useEditTransactionForm() {
   const [accountId, setAccountId] = useState('');
   const [toAccountId, setToAccountId] = useState('');
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
+  const [channel, setChannel] = useState<import('../../context/types').SalesChannel | undefined>(undefined);
+  const [isPending, setIsPending] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // flag para saber si la navegación ya fue disparada manualmente
@@ -43,6 +45,8 @@ export function useEditTransactionForm() {
         setAccountId(transaction.accountId);
         setToAccountId((transaction as any).toAccountId || '');
         setSelectedLabels(transaction.labels || []);
+        setChannel(transaction.channel);
+        setIsPending(!!transaction.isPending);
       } else {
         if (!navigatedRef.current) {
           navigate(-1);
@@ -138,6 +142,8 @@ export function useEditTransactionForm() {
           amount: parseFloat(amount),
           accountId,
           labels: selectedLabels,
+          channel: type === 'entrada' ? channel : undefined,
+          isPending: type === 'entrada' ? isPending : undefined,
         });
       }
 
@@ -146,7 +152,7 @@ export function useEditTransactionForm() {
       navigate(-1);
     },
     [
-      type, date, time, detail, amount, accountId, toAccountId, selectedLabels, id,
+      type, date, time, detail, amount, accountId, toAccountId, selectedLabels, channel, isPending, id,
       getTransactionById, updateTransaction, transferBetweenAccounts, adjustBalance, navigate,
     ]
   );
@@ -170,6 +176,8 @@ export function useEditTransactionForm() {
     accountId,
     toAccountId,
     selectedLabels,
+    channel,
+    isPending,
     showDeleteConfirm,
     // Derived
     filteredLabels,
@@ -182,6 +190,8 @@ export function useEditTransactionForm() {
     setAmount,
     setAccountId,
     setToAccountId,
+    setChannel,
+    setIsPending,
     setShowDeleteConfirm,
     // Actions
     toggleLabel,

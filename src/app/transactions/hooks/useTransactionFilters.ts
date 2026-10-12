@@ -14,6 +14,7 @@ export interface TransactionFiltersResult {
   sortOrder: 'asc' | 'desc';
   selectedLabelId: string | null;
   searchQuery: string;
+  onlyPending: boolean;
   setSelectedAccount: (account: string) => void;
   setStartDate: (date: string) => void;
   setEndDate: (date: string) => void;
@@ -21,6 +22,7 @@ export interface TransactionFiltersResult {
   setSortOrder: (order: 'asc' | 'desc') => void;
   setSelectedLabelId: (labelId: string | null) => void;
   setSearchQuery: (query: string) => void;
+  setOnlyPending: (val: boolean) => void;
   clearFilters: () => void;
   clearDateRange: () => void;
   filterDateText: string | null;
@@ -36,12 +38,17 @@ export function useTransactionFilters(currentDate: Date): TransactionFiltersResu
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedLabelId, setSelectedLabelId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [onlyPending, setOnlyPending] = useState<boolean>(false);
 
   const filteredTransactions = useMemo(() => {
     let filtered = [...transactions];
 
     if (selectedAccount !== 'all') {
       filtered = filtered.filter(t => t.accountId === selectedAccount);
+    }
+
+    if (onlyPending) {
+      filtered = filtered.filter(t => t.isPending);
     }
 
     if (startDate && endDate) {
@@ -52,7 +59,7 @@ export function useTransactionFilters(currentDate: Date): TransactionFiltersResu
           end: parseISO(endDate),
         });
       });
-    } else {
+    } else if (!onlyPending) {
       const monthStart = startOfMonth(currentDate);
       const monthEnd = endOfMonth(currentDate);
 
@@ -72,9 +79,11 @@ export function useTransactionFilters(currentDate: Date): TransactionFiltersResu
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(t => {
         const detailMatch = t.detail && t.detail.toLowerCase().includes(query);
+        const channelMatch = t.channel && t.channel.toLowerCase().includes(query);
+        const pendingMatch = t.isPending && ('pendiente'.includes(query) || 'por cobrar'.includes(query));
         const descMatch = (t as any).description && (t as any).description.toLowerCase().includes(query);
         const textMatch = (t as any).text && (t as any).text.toLowerCase().includes(query);
-        return detailMatch || descMatch || textMatch;
+        return detailMatch || channelMatch || pendingMatch || descMatch || textMatch;
       });
     }
 
@@ -83,7 +92,7 @@ export function useTransactionFilters(currentDate: Date): TransactionFiltersResu
       const timeB = new Date(`${b.date}T${b.time || '00:00'}`).getTime();
       return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
     });
-  }, [transactions, selectedAccount, currentDate, startDate, endDate, sortOrder, selectedLabelId, searchQuery]);
+  }, [transactions, selectedAccount, currentDate, startDate, endDate, sortOrder, selectedLabelId, searchQuery, onlyPending]);
 
   const summary = useMemo(() => {
     return filteredTransactions.reduce(
@@ -108,6 +117,7 @@ export function useTransactionFilters(currentDate: Date): TransactionFiltersResu
     setSortOrder('desc');
     setSelectedLabelId(null);
     setSearchQuery('');
+    setOnlyPending(false);
   }, []);
 
   const clearDateRange = useCallback(() => {
@@ -130,6 +140,7 @@ export function useTransactionFilters(currentDate: Date): TransactionFiltersResu
     sortOrder,
     selectedLabelId,
     searchQuery,
+    onlyPending,
     setSelectedAccount,
     setStartDate,
     setEndDate,
@@ -137,6 +148,7 @@ export function useTransactionFilters(currentDate: Date): TransactionFiltersResu
     setSortOrder,
     setSelectedLabelId,
     setSearchQuery,
+    setOnlyPending,
     clearFilters,
     clearDateRange,
     filterDateText,

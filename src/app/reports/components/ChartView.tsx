@@ -64,7 +64,7 @@ export function ChartView() {
           <div className="px-4 pt-4 pb-3 flex items-center justify-between">
             <div>
               <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">
-                {dimension === "tags" ? "Por Etiquetas" : "Por Cuentas"}
+                {dimension === "tags" ? "Por Etiquetas" : dimension === "accounts" ? "Por Cuentas" : "Por Canales de Venta"}
               </h3>
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                 {filterType === "salida"

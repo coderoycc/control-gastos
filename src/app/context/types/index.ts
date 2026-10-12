@@ -2,6 +2,8 @@
 
 export type TransactionType = 'entrada' | 'salida' | 'transferencia';
 
+export type SalesChannel = 'whatsapp' | 'instagram' | 'marketplace' | 'tiktok' | 'feria' | 'otro';
+
 export interface Transaction {
   id: string;
   type: TransactionType;
@@ -12,6 +14,8 @@ export interface Transaction {
   accountId: string;
   toAccountId?: string;
   labels: string[];
+  channel?: SalesChannel;
+  isPending?: boolean;
 }
 
 export interface Account {
@@ -67,6 +71,8 @@ export interface DataContextType {
   getAccountById: (id: string) => Account | undefined;
   getLabelById: (id: string) => Label | undefined;
   adjustBalance: (accountId: string, amount: number) => void;
+  setAccountExactBalance: (accountId: string, exactAmount: number) => void;
+  toggleTransactionPending: (id: string) => void;
   transferBetweenAccounts: (fromAccountId: string, toAccountId: string, amount: number) => void;
   importBackup: (backupData: {
     transactions: Transaction[];

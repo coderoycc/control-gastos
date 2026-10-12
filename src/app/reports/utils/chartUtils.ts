@@ -1,5 +1,5 @@
 export type ChartType = 'pie' | 'bar' | 'line';
-export type GroupDimension = 'tags' | 'accounts' | 'date' | 'type';
+export type GroupDimension = 'tags' | 'accounts' | 'channels' | 'date' | 'type';
 export type FilterType = 'all' | 'entrada' | 'salida';
 export type ViewMode = 'pie' | 'lines' | 'summary';
 

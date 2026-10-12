@@ -128,6 +128,32 @@ export function useReportCharts() {
           ...item,
           color: CHART_COLORS[idx % CHART_COLORS.length],
         }));
+    } else if (dimension === 'channels') {
+      const channelMap = new Map<string, { name: string; value: number; color?: string }>();
+
+      const channelColors: Record<string, { name: string; color: string }> = {
+        whatsapp: { name: '💬 WhatsApp', color: '#10b981' },
+        instagram: { name: '📸 Instagram', color: '#ec4899' },
+        marketplace: { name: '🛍️ Marketplace', color: '#3b82f6' },
+        tiktok: { name: '🎵 TikTok', color: '#1e293b' },
+        feria: { name: '🏪 Feria / Local', color: '#f59e0b' },
+        otro: { name: '📦 Otro canal', color: '#64748b' },
+        directo: { name: 'Directo / Sin canal', color: '#94a3b8' },
+      };
+
+      filteredTransactions.forEach(t => {
+        const key = t.channel || 'directo';
+        const info = channelColors[key] || { name: key, color: '#94a3b8' };
+        const current = channelMap.get(key) || { name: info.name, value: 0, color: info.color };
+        channelMap.set(key, { ...current, value: current.value + t.amount });
+      });
+
+      return Array.from(channelMap.entries())
+        .sort(([, a], [, b]) => b.value - a.value)
+        .map(([id, item]) => ({
+          id,
+          ...item,
+        }));
     } else if (dimension === 'type') {
       const typeMap = {
         entrada: { name: 'Ingresos', value: 0, color: '#10b981' },

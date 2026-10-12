@@ -12,6 +12,7 @@ import { DateTimePicker } from "./form/DateTimePicker";
 import { AccountFields } from "./form/AccountFields";
 import { LabelSelector } from "./form/LabelSelector";
 import { SpendingLimitModal } from "./form/SpendingLimitModal";
+import { SalesChannelSelector } from "./form/SalesChannelSelector";
 
 export function EditTransactionForm() {
   const [limitModalOpen, setLimitModalOpen] = useState(false);
@@ -26,6 +27,8 @@ export function EditTransactionForm() {
     accountId,
     toAccountId,
     selectedLabels,
+    channel,
+    isPending,
     showDeleteConfirm,
     filteredLabels,
     accounts,
@@ -36,6 +39,8 @@ export function EditTransactionForm() {
     setAmount,
     setAccountId,
     setToAccountId,
+    setChannel,
+    setIsPending,
     setShowDeleteConfirm,
     toggleLabel,
     cycleType,
@@ -165,9 +170,19 @@ export function EditTransactionForm() {
                   : "Descripción de la transacción"
               }
               className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
-              required={!isTransfer}
+              required={type === 'salida'}
             />
           </div>
+
+          {/* Selector de canal y cobro si es venta / entrada */}
+          {type === 'entrada' && (
+            <SalesChannelSelector
+              selectedChannel={channel}
+              onChangeChannel={setChannel}
+              isPending={isPending}
+              onTogglePending={setIsPending}
+            />
+          )}
 
           <AccountFields
             type={type}

@@ -11,6 +11,7 @@ import { DateTimePicker } from "./form/DateTimePicker";
 import { AccountFields } from "./form/AccountFields";
 import { LabelSelector } from "./form/LabelSelector";
 import { SpendingLimitModal } from "./form/SpendingLimitModal";
+import { SalesChannelSelector } from "./form/SalesChannelSelector";
 
 export function TransactionForm() {
   const [limitModalOpen, setLimitModalOpen] = useState(false);
@@ -24,6 +25,8 @@ export function TransactionForm() {
     accountId,
     toAccountId,
     selectedLabels,
+    channel,
+    isPending,
     filteredLabels,
     accounts,
     setType,
@@ -33,6 +36,8 @@ export function TransactionForm() {
     setAmount,
     setAccountId,
     setToAccountId,
+    setChannel,
+    setIsPending,
     toggleLabel,
     cycleType,
     handleSubmit,
@@ -100,7 +105,9 @@ export function TransactionForm() {
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h2 className="font-medium flex-1">Nueva Transacción</h2>
+        <h2 className="font-medium flex-1">
+          {type === 'entrada' ? 'Nueva Venta / Entrada' : type === 'salida' ? 'Nuevo Gasto' : 'Nueva Transferencia'}
+        </h2>
 
         {activeLimit && type === "salida" && alertType && (
           <button
@@ -141,21 +148,33 @@ export function TransactionForm() {
           {/* Detail */}
           <div>
             <label className="block text-xs mb-1.5 text-gray-700 dark:text-gray-300">
-              Detalle {isTransfer && "(opcional)"}
+              {type === 'entrada' ? 'Detalle de la venta (opcional)' : `Detalle ${isTransfer ? '(opcional)' : ''}`}
             </label>
             <input
               type="text"
               value={detail}
               onChange={(e) => setDetail(e.target.value)}
               placeholder={
-                isTransfer
-                  ? "Descripción de la transferencia"
-                  : "Descripción de la transacción"
+                type === 'entrada'
+                  ? 'Ej. 2 poleras, promo Instagram, pedido...'
+                  : isTransfer
+                  ? 'Descripción de la transferencia'
+                  : 'Descripción del gasto'
               }
               className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
-              required={!isTransfer}
+              required={type === 'salida'}
             />
           </div>
+
+          {/* Selector de canal y cobro si es venta / entrada */}
+          {type === 'entrada' && (
+            <SalesChannelSelector
+              selectedChannel={channel}
+              onChangeChannel={setChannel}
+              isPending={isPending}
+              onTogglePending={setIsPending}
+            />
+          )}
 
           <AccountFields
             type={type}
@@ -176,10 +195,14 @@ export function TransactionForm() {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 mt-4 rounded-lg bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
+            className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 mt-4 rounded-lg text-white font-medium transition-colors ${
+              type === 'entrada'
+                ? 'bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 shadow-sm'
+                : 'bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600'
+            }`}
           >
             <Save className="w-5 h-5" />
-            Guardar Transacción
+            {type === 'entrada' ? 'Guardar Venta' : 'Guardar Transacción'}
           </button>
         </div>
       </form>
