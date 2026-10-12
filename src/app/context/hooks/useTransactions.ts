@@ -62,6 +62,22 @@ export function useTransactions(
 		[transactions],
 	);
 
+	const toggleTransactionPending = useCallback(
+		(id: string) => {
+			setTransactions((prev) =>
+				prev.map((t) => {
+					if (t.id === id) {
+						const updated = { ...t, isPending: !t.isPending };
+						transactionRepo.put(updated).catch(console.error);
+						return updated;
+					}
+					return t;
+				}),
+			);
+		},
+		[setTransactions],
+	);
+
 	return {
 		transactions,
 		addTransaction,
@@ -69,5 +85,6 @@ export function useTransactions(
 		updateTransaction,
 		deleteTransaction,
 		getTransactionById,
+		toggleTransactionPending,
 	};
 }
