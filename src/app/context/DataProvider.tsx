@@ -4,6 +4,7 @@ import { useTransactions, useAccounts, useLabels, useSpendingLimits } from './ho
 import { INITIAL_ACCOUNTS, INITIAL_LABELS, INITIAL_TRANSACTIONS, INITIAL_SPENDING_LIMITS } from './initialState';
 import { transactionRepo, accountRepo, labelRepo, spendingLimitRepo, userSettingsRepo, clearStore } from '../../services/db';
 import type { Transaction, Account, Label, SpendingLimit, UserSettings } from './types';
+import { sanitizeSpendingLimits } from '../limits';
 
 export const DataContext = createContext<DataContextType | undefined>(undefined);
 
@@ -55,11 +56,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           const sorted = [...storedTransactions].sort(
             (a, b) => new Date(`${b.date}T${b.time || '00:00'}`).getTime() - new Date(`${a.date}T${a.time || '00:00'}`).getTime()
           );
+          const sanitizedLimits = sanitizeSpendingLimits(storedSpendingLimits);
           if (!cancelled) {
             setTransactions(sorted);
             setAccounts(storedAccounts);
             setLabels(storedLabels);
-            setSpendingLimits(storedSpendingLimits);
+            setSpendingLimits(sanitizedLimits);
           }
         }
 
@@ -95,6 +97,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     labels: Label[];
     spendingLimits: SpendingLimit[];
   }) => {
+    const sanitizedLimits = sanitizeSpendingLimits(backupData.spendingLimits);
     await Promise.all([
       clearStore('transactions'),
       clearStore('accounts'),
@@ -106,7 +109,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       transactionRepo.putMany(backupData.transactions),
       accountRepo.putMany(backupData.accounts),
       labelRepo.putMany(backupData.labels),
-      spendingLimitRepo.putMany(backupData.spendingLimits),
+      spendingLimitRepo.putMany(sanitizedLimits),
     ]);
 
     const sorted = [...backupData.transactions].sort(
@@ -115,7 +118,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setTransactions(sorted);
     setAccounts(backupData.accounts);
     setLabels(backupData.labels);
-    setSpendingLimits(backupData.spendingLimits);
+    setSpendingLimits(sanitizedLimits);
   };
 
   const saveUserSettings = async (settings: Omit<UserSettings, 'id'>) => {
@@ -151,10 +154,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const sorted = [...storedTransactions].sort(
         (a, b) => new Date(`${b.date}T${b.time || '00:00'}`).getTime() - new Date(`${a.date}T${a.time || '00:00'}`).getTime()
       );
+      const sanitizedLimits = sanitizeSpendingLimits(storedSpendingLimits);
       setTransactions(sorted);
       setAccounts(storedAccounts);
       setLabels(storedLabels);
-      setSpendingLimits(storedSpendingLimits);
+      setSpendingLimits(sanitizedLimits);
     } catch (err) {
       console.error('[DataProvider] Error refrescando datos:', err);
     } finally {

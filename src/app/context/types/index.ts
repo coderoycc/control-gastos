@@ -35,6 +35,11 @@ export interface SpendingLimit {
   title: string;
   amount: number;
   enabled: boolean;
+  /**
+   * ID de la cuenta a la que aplica este límite,
+   * o null/undefined para 'Todas las cuentas' (global).
+   */
+  accountId?: string | null;
 }
 
 export interface UserSettings {

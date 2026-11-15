@@ -1,5 +1,5 @@
 const DB_NAME = "control-gastos-db";
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 export type StoreName =
 	| "transactions"

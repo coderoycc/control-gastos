@@ -45,7 +45,9 @@ export function TransactionForm() {
     totalWithCurrent,
     percentage,
     alertType,
-  } = useSpendingLimitAlert({ amount, date, type });
+  } = useSpendingLimitAlert({ amount, date, type, accountId });
+
+  const activeAccountName = accounts.find((a) => a.id === accountId)?.name;
 
   const prevAlertTypeRef = useRef(alertType);
 
@@ -189,6 +191,7 @@ export function TransactionForm() {
         isOpen={limitModalOpen}
         onClose={() => setLimitModalOpen(false)}
         activeLimit={activeLimit}
+        accountName={activeLimit?.accountId ? activeAccountName : null}
         monthlyExpensesTotalWithoutCurrent={monthlyExpensesTotalWithoutCurrent}
         amount={amount}
         totalWithCurrent={totalWithCurrent}
