@@ -1,21 +1,30 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useData, type SpendingLimit } from '../../context';
 
 export function useConfigLimits() {
-  const { spendingLimits, addSpendingLimit, updateSpendingLimit, deleteSpendingLimit } = useData();
+  const { spendingLimits, accounts, addSpendingLimit, updateSpendingLimit, deleteSpendingLimit } = useData();
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
+  const [accountId, setAccountId] = useState<string | null>(null);
   const [enabled, setEnabled] = useState(true);
+
+  // Mapeo rápido de cuentas para mostrar nombres
+  const accountMap = useMemo(() => {
+    return new Map(accounts.map((a) => [a.id, a.name]));
+  }, [accounts]);
 
   const openAdd = useCallback(() => {
     setEditingId(null);
     setTitle('');
     setAmount('');
-    const hasActive = spendingLimits.some(limit => limit.enabled);
-    setEnabled(!hasActive);
+    setAccountId(null);
+
+    // Por defecto, habilitar si no hay otro límite global activo
+    const hasActiveGlobal = spendingLimits.some((l) => l.enabled && !l.accountId);
+    setEnabled(!hasActiveGlobal);
     setShowForm(true);
   }, [spendingLimits]);
 
@@ -23,6 +32,7 @@ export function useConfigLimits() {
     setEditingId(limit.id);
     setTitle(limit.title);
     setAmount(limit.amount.toString());
+    setAccountId(limit.accountId ?? null);
     setEnabled(limit.enabled);
     setShowForm(true);
   }, []);
@@ -32,14 +42,25 @@ export function useConfigLimits() {
     setEditingId(null);
     setTitle('');
     setAmount('');
-    const hasActive = spendingLimits.some(limit => limit.enabled);
-    setEnabled(!hasActive);
-  }, [spendingLimits]);
+    setAccountId(null);
+    setEnabled(true);
+  }, []);
+
+  // Verifica si ya existe otro límite ACTIVO en el mismo scope (misma cuenta o ambos globales)
+  const hasAnotherActiveInScope = useMemo(() => {
+    const targetScope = accountId || null;
+    return spendingLimits.some((l) => {
+      if (l.id === editingId || !l.enabled) return false;
+      const currentScope = l.accountId || null;
+      return currentScope === targetScope;
+    });
+  }, [spendingLimits, editingId, accountId]);
 
   const handleSubmit = useCallback(
-    (e: React.FormEvent) => {
+    async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!title) {
+      const trimmedTitle = title.trim();
+      if (!trimmedTitle) {
         alert('Por favor ingresa el título del límite');
         return;
       }
@@ -49,31 +70,41 @@ export function useConfigLimits() {
       }
       const parsed = parseFloat(amount);
       if (isNaN(parsed) || parsed <= 0) {
-        alert('Por favor ingresa un monto válido');
+        alert('Por favor ingresa un monto válido mayor a 0');
         return;
       }
+
+      const limitData: Omit<SpendingLimit, 'id'> = {
+        title: trimmedTitle,
+        amount: parsed,
+        enabled,
+        accountId: accountId || null,
+      };
+
       if (editingId) {
-        updateSpendingLimit(editingId, { title, amount: parsed, enabled });
+        await updateSpendingLimit(editingId, limitData);
       } else {
-        addSpendingLimit({ title, amount: parsed, enabled });
+        await addSpendingLimit(limitData);
       }
       close();
     },
-    [title, amount, enabled, editingId, updateSpendingLimit, addSpendingLimit, close]
+    [title, amount, enabled, accountId, editingId, updateSpendingLimit, addSpendingLimit, close]
   );
-
-  const hasAnotherActive = spendingLimits.some(limit => limit.enabled && limit.id !== editingId);
 
   return {
     spendingLimits,
+    accounts,
+    accountMap,
     showForm,
     editingId,
     title,
     amount,
+    accountId,
     enabled,
-    hasAnotherActive,
+    hasAnotherActiveInScope,
     setTitle,
     setAmount,
+    setAccountId,
     setEnabled,
     openAdd,
     openEdit,
